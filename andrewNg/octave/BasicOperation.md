@@ -10,3 +10,5 @@ y=x^2%函数体
 function[a,b] = squareAndCube(x)
 a=x^2
 b=x^3
+
+eye(5) % a 5x5 identity matrix
