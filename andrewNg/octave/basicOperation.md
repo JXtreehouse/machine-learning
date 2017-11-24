@@ -10,3 +10,5 @@ y=x^2%函数体
 function[a,b] = squareAndCube(x)
 a=x^2
 b=x^3
+
+X=data[:,1] %获取MxN矩阵的第一列
