@@ -10,3 +10,16 @@ value scaling 特征值除以特征范围
 mean normalization 特征值减去平均特征值
 
 normal equation 方法求h，应该是求costFunctionJ的最小值时的theta
+
+m = length(y); % number of training examples
+J_history = zeros(num_iters, 1);
+
+for iter = 1:num_iters
+ h = X * theta
+    for i = 1:size(theta,1)
+      theta(i) = theta(i) - alpha/m * X(:,i)'*(h-y)
+    J_history(iter) = computeCostMulti(X, y, theta);
+
+end
+
+end
