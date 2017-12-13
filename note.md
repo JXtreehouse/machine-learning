@@ -40,4 +40,20 @@ argsort(x) # [1, 2, 0]
 dict = sorted(dic.iteritems(), key=lambda d:d[0])
 sortedClassCount = sorted(classCount.iteritems(), key=operator.itemgetter(1), reverse=True)
 
-# https://www.cnblogs.com/oftenlin/p/5466490.html
+tile function :
+>>> numpy.tile([0,0],5)#在列方向上重复[0,0]5次，默认行1次
+array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+>>> numpy.tile([0,0],(1,1))#在列方向上重复[0,0]1次，行1次
+array([[0, 0]])
+>>> numpy.tile([0,0],(2,1))#在列方向上重复[0,0]1次，行2次
+array([[0, 0],
+       [0, 0]])
+>>> numpy.tile([0,0],(3,1))
+array([[0, 0],
+       [0, 0],
+       [0, 0]])
+>>> numpy.tile([0,0],(1,3))#在列方向上重复[0,0]3次，行1次
+array([[0, 0, 0, 0, 0, 0]])
+>>> numpy.tile([0,0],(2,3))<span style="font-family: Arial, Helvetica, sans-serif;">#在列方向上重复[0,0]3次，行2次</span>
+array([[0, 0, 0, 0, 0, 0],
+       [0, 0, 0, 0, 0, 0]])
