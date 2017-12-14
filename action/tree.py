@@ -1,6 +1,7 @@
 #决策树
 
 from math import log
+import operator
 
 def createDataSet():
     dataSet = [[1, 1, 'yes'],
@@ -28,13 +29,14 @@ def calcShannonEnt(dataSet):
         shannonEnt -= prob*log(prob,2)
     return shannonEnt
 
+#获取特征是axis值和value一样的样本
 def splitDataSet(dataSet,axis,value):
     retDataSet=[]
     for featVec in dataSet:
         if featVec[axis] == value:
-            # reducedFeatVec = featVec[:axis]
-            # reducedFeatVec.extend(featVec[axis+1:])
-            reducedFeatVec = featVec
+            reducedFeatVec = featVec[:axis]
+            reducedFeatVec.extend(featVec[axis+1:])
+            # reducedFeatVec = featVec
             retDataSet.append(reducedFeatVec)
     return retDataSet
 
@@ -63,3 +65,31 @@ def chooseBestFeatureToSplit(dataSet):
     return bestFeature
 
 print(chooseBestFeatureToSplit(dataSet))
+
+#找出现次数最大的类
+def majorityCount(classList):
+    classCount={}
+    for vote in classList:
+        if vote not in classCount.keys():classCount[vote]=0
+        classCount[vote]+=1
+    sortedClassCount = sorted(classCount.items(), key=operator.itemgetter(1), reverse=True)
+    return sortedClassCount[0][0]
+
+def createTree(dataSet,labels):
+    classList = [example[-1] for example in dataSet]
+    if classList.count(classList[0]) == len(classList):
+        return classList[0]
+    if len(dataSet[0])==1:
+        return majorityCount(classList)
+    bestFeature = chooseBestFeatureToSplit(dataSet)
+    bestFeatureLabel = labels[bestFeature]
+    myTree = {bestFeatureLabel:{}}
+    del(labels[bestFeature])
+    featureValues = [example[bestFeature] for example in dataSet]
+    uniqueValues = set(featureValues)
+    for value in uniqueValues:
+        subLabels = labels[:]
+        myTree[bestFeatureLabel][value] = createTree(splitDataSet(dataSet,bestFeature,value),subLabels)
+    return myTree
+
+myTree = createTree(dataSet,labels)
