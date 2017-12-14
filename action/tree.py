@@ -1,4 +1,4 @@
-#计算香农熵
+#决策树
 
 from math import log
 
@@ -11,6 +11,7 @@ def createDataSet():
     labels = ['no surfacing','flippers']
     #change to discrete values
     return dataSet, labels
+
 
 
 def calcShannonEnt(dataSet):
@@ -27,5 +28,38 @@ def calcShannonEnt(dataSet):
         shannonEnt -= prob*log(prob,2)
     return shannonEnt
 
+def splitDataSet(dataSet,axis,value):
+    retDataSet=[]
+    for featVec in dataSet:
+        if featVec[axis] == value:
+            # reducedFeatVec = featVec[:axis]
+            # reducedFeatVec.extend(featVec[axis+1:])
+            reducedFeatVec = featVec
+            retDataSet.append(reducedFeatVec)
+    return retDataSet
+
+
 dataSet,labels=createDataSet()
-calcShannonEnt(dataSet)
+shannonEnt = calcShannonEnt(dataSet)
+
+splitDataSet(dataSet,0,0)
+
+def chooseBestFeatureToSplit(dataSet):
+    numFeatures = len(dataSet[0]) - 1
+    baseEntropy = calcShannonEnt(dataSet) #H(D)
+    bestInfoGain = 0.0;bestFeature = -1
+    for i in range(numFeatures):
+        featList = [example[i] for example in dataSet]
+        uniqueVals = set(featList) #对一个特征值分类
+        newEntropy = 0.0
+        for value in uniqueVals:
+            subDataSet = splitDataSet(dataSet,i,value)
+            prob = len(subDataSet)/float(len(dataSet))
+            newEntropy += prob * calcShannonEnt(subDataSet)
+        infoGain = baseEntropy - newEntropy
+        if(infoGain > bestInfoGain):
+            bestInfoGain = infoGain
+            bestFeature = i
+    return bestFeature
+
+print(chooseBestFeatureToSplit(dataSet))
