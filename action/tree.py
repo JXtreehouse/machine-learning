@@ -13,8 +13,6 @@ def createDataSet():
     #change to discrete values
     return dataSet, labels
 
-
-
 def calcShannonEnt(dataSet):
     numEntries = len(dataSet)
     labelCounts={}
@@ -40,12 +38,6 @@ def splitDataSet(dataSet,axis,value):
             retDataSet.append(reducedFeatVec)
     return retDataSet
 
-
-dataSet,labels=createDataSet()
-shannonEnt = calcShannonEnt(dataSet)
-
-splitDataSet(dataSet,0,0)
-
 def chooseBestFeatureToSplit(dataSet):
     numFeatures = len(dataSet[0]) - 1
     baseEntropy = calcShannonEnt(dataSet) #H(D)
@@ -63,8 +55,6 @@ def chooseBestFeatureToSplit(dataSet):
             bestInfoGain = infoGain
             bestFeature = i
     return bestFeature
-
-print(chooseBestFeatureToSplit(dataSet))
 
 #找出现次数最大的类
 def majorityCount(classList):
@@ -92,4 +82,39 @@ def createTree(dataSet,labels):
         myTree[bestFeatureLabel][value] = createTree(splitDataSet(dataSet,bestFeature,value),subLabels)
     return myTree
 
+
+def classify(inputTree,featLabels,testVec):
+    firstStr = list(inputTree.keys())[0]
+    secondDict = inputTree[firstStr]
+    featIndex = featLabels.index(firstStr)
+    for key in secondDict.keys():
+        if testVec[featIndex] == key:
+            if type(secondDict[key]).__name__=='dict':
+                classLabel = classify(secondDict[key],featLabels,testVec)
+            else: classLabel = secondDict[key]
+    return classLabel
+
+dataSet,labels=createDataSet()
+labelsCopy = labels[:]
 myTree = createTree(dataSet,labels)
+
+def storeTree(inputTree,filename):
+    import pickle
+    fw = open(filename,'wb')
+    pickle.dump(inputTree,fw)
+    fw.close()
+
+def grabTree(filename):
+    import pickle
+    fr = open(filename,'rb')
+    return pickle.load(fr)
+
+# storeTree(myTree,'tree.json')
+# print(grabTree('tree.json'))
+fr = open('lenses.txt')
+lenses=[inst.strip().split('\t') for inst in fr.readlines()]
+lensesLabels=['age','prescript','astigmatic','tearRate']
+lensesTree = createTree(lenses,lensesLabels)
+
+from action.treePlotter import *
+createPlot(lensesTree)
