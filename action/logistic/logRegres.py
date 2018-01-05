@@ -48,3 +48,45 @@ def stocGradAscent1(dataMatrix,classLabels,numIter=500):
             weights = weights + alpha * error *dataMatrix[randIndex] #让randIndex位置的样本点J趋于局部最小
             del (list(dataIndex)[randIndex])
     return weights
+
+def classifyVector(input,weights):
+    prob = sigmoid(sum(input*weights))
+    if prob > 0.5 : return 1.0
+    else : return 0.0
+
+def colicTest():
+    trainingData = open('data/horseColicTraining.txt')
+    testData = open('data/horseColicTest.txt')
+    trainingSet = [];trainingLabels = []
+    for line in trainingData.readlines():
+        currentLine = line.strip().split('\t')
+        lineArr = []
+        for i in range(21):
+            lineArr.append(float(currentLine[i]))
+        trainingSet.append(lineArr) #python矩阵（2维数组）
+        trainingLabels.append(float(currentLine[21]))
+    trainingWeights = stocGradAscent1(array(trainingSet),trainingLabels,100)
+
+    #开始跑测试数据
+    errorCount = 0;numTestVec = 0.0
+    for line in testData.readlines():
+        numTestVec += 1.0
+        currentLine = line.strip().split('\t')
+        lineArr = []
+        for i in range(21):
+            lineArr.append(float(currentLine[i]))
+        if int(classifyVector(array(lineArr),trainingWeights)) != int(currentLine[21]):
+            errorCount += 1
+
+    errorRate = (float(errorCount)/numTestVec)
+    print('this error rate of this test is: %f' % errorRate)
+    return errorRate
+
+def multiTest():
+    numTests = 10; errorSum = 0.0
+    for k in range(numTests):
+        errorSum +=colicTest()
+    print('after %d iterations the average error rate is: %f' %(numTests,errorSum/float(numTests)))
+
+
+multiTest()
