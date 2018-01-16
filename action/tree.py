@@ -66,20 +66,20 @@ def majorityCount(classList):
     return sortedClassCount[0][0]
 
 def createTree(dataSet,labels):
-    classList = [example[-1] for example in dataSet]
-    if classList.count(classList[0]) == len(classList):
+    classList = [example[-1] for example in dataSet] #获取dataSet最后一列(训练集的label)
+    if classList.count(classList[0]) == len(classList): #所有标签都相同
         return classList[0]
-    if len(dataSet[0])==1:
+    if len(dataSet[0])==1:#
         return majorityCount(classList)
-    bestFeature = chooseBestFeatureToSplit(dataSet)
+    bestFeature = chooseBestFeatureToSplit(dataSet)#获取熵最大的特征值的下标
     bestFeatureLabel = labels[bestFeature]
     myTree = {bestFeatureLabel:{}}
-    del(labels[bestFeature])
+    del(labels[bestFeature])#删除最大熵的特征值
     featureValues = [example[bestFeature] for example in dataSet]
-    uniqueValues = set(featureValues)
+    uniqueValues = set(featureValues)#熵最大的特征值的值的分类
     for value in uniqueValues:
-        subLabels = labels[:]
-        myTree[bestFeatureLabel][value] = createTree(splitDataSet(dataSet,bestFeature,value),subLabels)
+        subLabels = labels[:] #复制label
+        myTree[bestFeatureLabel][value] = createTree(splitDataSet(dataSet,bestFeature,value),subLabels) #在最佳特征值下生出多条特征值对应的value作为node
     return myTree
 
 

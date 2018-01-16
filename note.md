@@ -57,3 +57,22 @@ array([[0, 0, 0, 0, 0, 0]])
 >>> numpy.tile([0,0],(2,3))<span style="font-family: Arial, Helvetica, sans-serif;">#在列方向上重复[0,0]3次，行2次</span>
 array([[0, 0, 0, 0, 0, 0],
        [0, 0, 0, 0, 0, 0]])
+       
+       string = "what the fuck^_^" 
+#默认返回全部
+print string[:]
+
+#返回1到9结果
+print string[1:9]
+
+#返回1到9结果,步长为1
+print string[1:9:]
+
+#返回1到9结果,步长为2
+print string[1:9:2]
+
+#返回1到9结果,步长为-1
+print string[1:9:-1]
+
+#转置
+print string[::-1]
