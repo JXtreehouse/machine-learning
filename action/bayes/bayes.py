@@ -38,10 +38,10 @@ def bagOfWords2Vec(vocabList, inputSet):
             returnVec[vocabList.index(word)] += 1
     return returnVec
 
-
+#trainMatrix:训练集的word vector , trainCategory:训练集的分类
 def trainNB0(trainMatrix, trainCategory):
-    numTrainDocs = len(trainMatrix)
-    pAbusive = sum(trainCategory) / float(numTrainDocs) #计算 p(c1)
+    numTrainDocs = len(trainMatrix) #40个 训练集
+    pAbusive = sum(trainCategory) / float(numTrainDocs) #计算 p(c1)  #训练集中不好的频率
     numWords = len(trainMatrix[0])
     p0Num = ones(numWords)#好的
     p0Denom = 2.0
@@ -54,7 +54,7 @@ def trainNB0(trainMatrix, trainCategory):
         else:
             p0Num += trainMatrix[i]
             p0Denom += sum(trainMatrix[i])
-    p0Vect = log(p0Num / p0Denom)#计算p(X|Y=Ck) 好的分类
+    p0Vect = log(p0Num / p0Denom)#计算p(X=x|Y=Ck) 好的分类
     p1Vect = log(p1Num / p1Denom)#不好的分类
     return p0Vect, p1Vect, pAbusive
 
@@ -125,11 +125,11 @@ def spamTest():
         #准备训练数据
         trainMat.append(setOfWords2Vec(vocabList, docList[docIndex]))
         trainClasses.append(classList[docIndex])
-    p0V, p1V, pSpam = trainNB0(array(trainMat), array(trainClasses))
+    p0V, p1V, pAbuse = trainNB0(array(trainMat), array(trainClasses))
     errorCount = 0
     for docIndex in testSetIndex:
         wordVector = setOfWords2Vec(vocabList, docList[docIndex])
-        if classifyNB(array(wordVector), p0V, p1V, pSpam) != classList[docIndex]:
+        if classifyNB(array(wordVector), p0V, p1V, pAbuse) != classList[docIndex]:
             errorCount += 1
     print('the error rate is:' ,float(errorCount)/len(testSetIndex))
 
