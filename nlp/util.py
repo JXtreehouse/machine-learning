@@ -1,4 +1,14 @@
+# encoding=utf-8
+import tensorflow
 import keras.backend as K
+import jieba
+import jieba.posseg as pseg
+import jieba.analyse
+
+str1 = "我来到北京清华大学"
+str2 = 'python的正则表达式是好用的'
+str3 = "小明硕士毕业于中国科学院计算所，后在日本京都大学深造"
+
 
 def softmax(x, axis=1):
     """Softmax activation function.

@@ -4,15 +4,17 @@ from keras.optimizers import Adam
 from keras.utils import to_categorical
 from keras.models import load_model, Model
 import numpy as np
-from .util import *
+from util import *
 
-m = None
+m = 100
 Tx = 30  # 问题有多少个单词
 Ty = 30  # 回答有多少个单词
 n_a = 32
 n_s = 64
+sentence_size = 30
+
 post_activation_LSTM_cell = LSTM(n_s, return_state=True)
-output_layer = Dense(32, activation=softmax)
+output_layer = Dense(sentence_size, activation=softmax)
 
 repeator = RepeatVector(Tx)
 concatenator = Concatenate(axis=-1)
@@ -32,7 +34,7 @@ def one_step_attention(a, s_prev):
     return context
 
 
-def model(Tx, Ty, n_a, n_s, human_vocab_size, machine_vocab_size):
+def model(Tx, Ty, n_a, n_s, input_size):
     """
     Arguments:
     Tx -- length of the input sequence
@@ -48,7 +50,7 @@ def model(Tx, Ty, n_a, n_s, human_vocab_size, machine_vocab_size):
 
     # Define the inputs of your model with a shape (Tx,)
     # Define s0 and c0, initial hidden state for the decoder LSTM of shape (n_s,)
-    X = Input(shape=(Tx, human_vocab_size))
+    X = Input(shape=(Tx, input_size))
     s0 = Input(shape=(n_s,), name='s0')
     c0 = Input(shape=(n_s,), name='c0')
     s = s0
@@ -85,7 +87,14 @@ def model(Tx, Ty, n_a, n_s, human_vocab_size, machine_vocab_size):
     return model
 
 
-model = model(Tx, Ty, n_a, n_s, len(human_vocab), len(machine_vocab))
+model = model(Tx, Ty, n_a, n_s, sentence_size)
 out = model.compile(optimizer=Adam(lr=0.005, beta_1=0.9, beta_2=0.999, decay=0.01), metrics=['accuracy'],
                     loss='categorical_crossentropy')
-model.fit([Xoh, s0, c0], outputs, epochs=1, batch_size=100)
+
+Xoh = np.random.rand(m, Tx, 30)
+Yoh = np.random.rand(m, Tx, 30)
+s0 = np.zeros((m, n_s))
+c0 = np.zeros((m, n_s))
+outputs = list(Yoh.swapaxes(0, 1))
+
+model.fit([Xoh, s0, c0], outputs, epochs=10, batch_size=10)
