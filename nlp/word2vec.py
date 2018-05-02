@@ -7,10 +7,6 @@ from util import *
 model = gensim.models.Word2Vec.load('D:\workspace\word2vec_from_weixin\word2vec\word2vec_wx')
 
 
-def normalize(vec):
-    return np.where(vec > 0, vec, -1*vec)
-
-
 def word2vector(word):
     try:
         return model[word]
@@ -32,7 +28,7 @@ def vec2word(vector):
     words = read_ws()
     for word in words:
         try:
-            v = word2vector(word)
+            v = model[word]
         except KeyError:
             continue
         cosine = vector_cosine(vector, v)
