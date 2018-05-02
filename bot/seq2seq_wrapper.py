@@ -150,11 +150,12 @@ class Seq2Seq(object):
                 self.train_batch(sess, train_set)
                 val_loss = self.eval_batches(sess, valid_set, 16)  # TODO : and this
                 # print stats
-                print('\nModel saved to disk at iteration #{}'.format(i))
+
                 print('val   loss : {0:.6f}'.format(val_loss))
                 if i and i % 10 == 0:  # TODO : make this tunable by the user
                     # save model to disk
                     saver.save(sess, self.ckpt_path + self.model_name + '.ckpt', global_step=i)
+                    print('\nModel saved to disk at iteration #{}'.format(i))
                     sys.stdout.flush()
             except KeyboardInterrupt:  # this will most definitely happen, so handle it
                 print('Interrupted by user at iteration {}'.format(i))

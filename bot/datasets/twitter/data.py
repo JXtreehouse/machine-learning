@@ -34,7 +34,7 @@ def ddefault():
 
 '''
 def read_lines(filename):
-    return open(filename).read().split('\n')[:-1]
+    return open(filename).read().split('\n')[:1000]
 
 
 '''
