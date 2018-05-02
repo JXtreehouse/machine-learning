@@ -11,13 +11,14 @@ m = None
 Tx = 10  # 问题有多少个单词
 Ty = Tx  # 回答有多少个单词
 
-model = model_(Tx, Ty, n_a, n_s, wt.oh_len)
+model = model_(Tx, Ty, n_a, n_s, 9097)
 model.load_weights('data/model.h5')
 
 def predict(sentence):
-    list = np.array([pad(cut2vec(sentence))])
+    list = np.array([cut2vec_input(sentence)])
     prediction = model.predict([list, s0, c0])
-    return [vec2word(item[0]) for item in prediction]
+    prediction = np.argmax(prediction, axis=-1)
+    return [i[0] for i in prediction]
 
 
-print(predict('哈哈'))
+print(predict('谢谢'))

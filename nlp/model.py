@@ -6,16 +6,16 @@ from keras.models import load_model, Model
 import numpy as np
 from util import *
 
-
 m = None
 Tx = 10  # 问题有多少个单词
 Ty = Tx  # 回答有多少个单词
 n_a = 32
 n_s = 64
 sentence_size = Tx
+vec_size = 9097
 
 post_activation_LSTM_cell = LSTM(n_s, return_state=True)
-output_layer = Dense(2257, activation=softmax)
+output_layer = Dense(vec_size, activation=softmax)
 
 repeator = RepeatVector(Tx)
 concatenator = Concatenate(axis=-1)
@@ -28,8 +28,7 @@ dotor = Dot(axes=1)
 def one_step_attention(a, s_prev):
     s_prev = repeator(s_prev)
     concat = concatenator([a, s_prev])
-    e = densor1(concat)
-    energies = densor2(e)
+    energies = densor1(concat)
     alphas = activator(energies)
     context = dotor([alphas, a])
     return context
@@ -88,20 +87,20 @@ def model_(Tx, Ty, n_a, n_s, input_size):
 
 
 def train():
-    # X, Y = get_train_set('D:\workspace\subtitle.corpus',0.001)
-    X = np.random.rand(1000,10,2257)
-    Y = np.random.rand(1000,10,2257)
-    model = model_(Tx, Ty, n_a, n_s, oh_len)
+    X, Y = get_train_set('D:\workspace\subtitle.corpus',0.001)
 
-    model.compile(optimizer=Adam(lr=0.0005, beta_1=0.9, beta_2=0.999, decay=0.01), metrics=['accuracy'],
+    model = model_(Tx, Ty, n_a, n_s, vec_size)
+    model.compile(optimizer=Adam(lr=0.005, beta_1=0.9, beta_2=0.999, decay=0.01), metrics=['accuracy'],
                   loss='categorical_crossentropy')
+
     m = Y.shape[0]
     s0 = np.zeros((m, n_s))
     c0 = np.zeros((m, n_s))
     outputs = list(Y.swapaxes(0, 1))
 
-    model.fit([X, s0, c0], outputs, epochs=10, batch_size=30)
+    model.fit([X, s0, c0], outputs, epochs=10, batch_size=300)
     model.save_weights('data/model.h5')
+
 
 
 train()

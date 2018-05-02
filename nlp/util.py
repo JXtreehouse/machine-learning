@@ -8,7 +8,7 @@ import sys
 import numpy as np
 
 sentence_size = 10
-thresh_holder = 1000
+thresh_holder = 10000
 PAD_ID = 0
 # 输出序列起始标记
 GO_ID = 1
@@ -18,7 +18,7 @@ UNK_ID = 3
 START_ID = 4
 word2id_dict = {}
 id2word_dict = {}
-oh_len = 0
+oh_len = 2257
 
 
 def word2id(word):
