@@ -1,7 +1,7 @@
 EN_WHITELIST = '0123456789abcdefghijklmnopqrstuvwxyz ' # space is included in whitelist
 EN_BLACKLIST = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~\''
 
-FILENAME = 'data/chat.txt'
+FILENAME = 'D:\workspace\subtitle.corpus'
 
 limit = {
         'maxq' : 20,
@@ -24,6 +24,7 @@ import numpy as np
 
 import pickle
 
+import jieba as jb
 
 def ddefault():
     return 1
@@ -34,7 +35,7 @@ def ddefault():
 
 '''
 def read_lines(filename):
-    return open(filename).read().split('\n')[:-1]
+    return open(filename,encoding='utf-8').read().split('\n')[:1000]
 
 
 '''
@@ -84,7 +85,7 @@ def filter_data(sequences):
     raw_data_len = len(sequences)//2
 
     for i in range(0, len(sequences), 2):
-        qlen, alen = len(sequences[i].split(' ')), len(sequences[i+1].split(' '))
+        qlen, alen = len([w for w in jb.cut(sequences[i])]), len([w for w in jb.cut(sequences[i+1])])
         if qlen >= limit['minq'] and qlen <= limit['maxq']:
             if alen >= limit['mina'] and alen <= limit['maxa']:
                 filtered_q.append(sequences[i])
@@ -150,15 +151,15 @@ def process_data():
     lines = read_lines(filename=FILENAME)
 
     # change to lower case (just for en)
-    lines = [ line.lower().strip() for line in lines ]
-
-    print('\n:: Sample from read(p) lines')
-    print(lines[121:125])
+    # lines = [ line.lower().strip() for line in lines ]
+    #
+    # print('\n:: Sample from read(p) lines')
+    # print(lines[121:125])
 
     # filter out unnecessary characters
-    print('\n>> Filter lines')
-    lines = [ filter_line(line, EN_WHITELIST) for line in lines ]
-    print(lines[121:125])
+    # print('\n>> Filter lines')
+    # lines = [ filter_line(line, EN_WHITELIST) for line in lines ]
+    # print(lines[121:125])
 
     # filter out too long or too short sequences
     print('\n>> 2nd layer of filtering')
@@ -169,8 +170,8 @@ def process_data():
 
     # convert list of [lines of text] into list of [list of words ]
     print('\n>> Segment lines into words')
-    qtokenized = [ wordlist.split(' ') for wordlist in qlines ]
-    atokenized = [ wordlist.split(' ') for wordlist in alines ]
+    qtokenized = [ [ w for w in jb.cut(wordlist)] for wordlist in qlines ]
+    atokenized = [ [ w for w in jb.cut(wordlist)] for wordlist in alines ]
     print('\n:: Sample from segmented list of words')
     print('\nq : {0} ; a : {1}'.format(qtokenized[60], atokenized[60]))
     print('\nq : {0} ; a : {1}'.format(qtokenized[61], atokenized[61]))
