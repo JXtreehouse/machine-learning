@@ -158,7 +158,7 @@ class Seq2Seq(object):
 
                 self.train_batch(sess, train_set)
 
-                if i and i % 500 == 0:  # TODO : make this tunable by the user
+                if i and i % 300 == 0:  # TODO : make this tunable by the user
                     val_loss = self.eval_batches(sess, valid_set, 16)  # TODO : and this
                     # print stats
 
