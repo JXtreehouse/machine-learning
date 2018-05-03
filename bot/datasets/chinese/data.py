@@ -207,13 +207,7 @@ def load_data(PATH=''):
     idx_q = np.load(PATH + 'idx_q.npy')
     idx_a = np.load(PATH + 'idx_a.npy')
 
-    c = list(zip(idx_q, idx_a))
-
-    random.Random().shuffle(c)
-
-    idx_q, idx_a = zip(*c)
-
-    return metadata, np.array(idx_q), np.array(idx_a)
+    return metadata, idx_q, idx_a
 
 
 if __name__ == '__main__':
