@@ -3,6 +3,8 @@
 import tensorflow as tf
 import numpy as np
 
+tf.device('/gpu:0')
+
 # preprocessed data
 from datasets.chinese import data
 import data_utils
@@ -14,7 +16,7 @@ metadata, idx_q, idx_a = data.load_data(PATH='datasets/chinese/')
 # parameters 
 xseq_len = trainX.shape[-1]  # 每句话20个词
 yseq_len = trainY.shape[-1]
-batch_size = 1000
+batch_size = 128
 xvocab_size = len(metadata['idx2w'])  # 一共有多少个单词
 yvocab_size = xvocab_size
 emb_dim = 512
@@ -30,8 +32,8 @@ model = seq2seq_wrapper.Seq2Seq(xseq_len=xseq_len,
                                 ckpt_path='ckpt/twitter/',
                                 emb_dim=emb_dim,
                                 num_layers=3,
-                                epochs=10000,
-                                lr=0.0001
+                                epochs=1000,
+                                lr=0.005
                                 )
 
 # In[8]:
@@ -42,9 +44,9 @@ train_batch_gen = data_utils.rand_batch_gen(trainX, trainY, batch_size)
 train = True
 
 if train:
-    # sess = model.restore_last_session()
     val_batch_gen = data_utils.rand_batch_gen(validX, validY, 32)
     train_batch_gen = data_utils.rand_batch_gen(trainX, trainY, batch_size)
+    # sess = model.restore_last_session()
     sess = model.train(train_batch_gen, val_batch_gen)
 else:
     sess = model.restore_last_session()

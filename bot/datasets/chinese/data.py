@@ -15,7 +15,6 @@ VOCAB_SIZE = 6000
 
 import random
 import sys
-
 import nltk
 import itertools
 from collections import defaultdict
@@ -35,7 +34,7 @@ def ddefault():
 
 '''
 def read_lines(filename):
-    return open(filename,encoding='utf-8').read().split('\n')[:-1]
+    return open(filename,encoding='utf-8').read().split('\n')[:1000000]
 
 
 '''
@@ -114,7 +113,7 @@ def zero_pad(qtokenized, atokenized, w2idx):
     data_len = len(qtokenized)
 
     # numpy arrays to store indices
-    idx_q = np.zeros([data_len, limit['maxq']], dtype=np.int32) 
+    idx_q = np.zeros([data_len, limit['maxq']], dtype=np.int32)
     idx_a = np.zeros([data_len, limit['maxa']], dtype=np.int32)
 
     for i in range(data_len):
@@ -143,7 +142,6 @@ def pad_seq(seq, lookup, maxlen):
         else:
             indices.append(lookup[UNK])
     return indices + [0]*(maxlen - len(seq))
-
 
 def process_data():
 
@@ -208,7 +206,14 @@ def load_data(PATH=''):
     # read numpy arrays
     idx_q = np.load(PATH + 'idx_q.npy')
     idx_a = np.load(PATH + 'idx_a.npy')
-    return metadata, idx_q, idx_a
+
+    c = list(zip(idx_q, idx_a))
+
+    random.Random().shuffle(c)
+
+    idx_q, idx_a = zip(*c)
+
+    return metadata, np.array(idx_q), np.array(idx_a)
 
 
 if __name__ == '__main__':

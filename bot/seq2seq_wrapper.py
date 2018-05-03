@@ -80,7 +80,14 @@ class Seq2Seq(object):
             loss_weights = [tf.ones_like(label, dtype=tf.float32) for label in self.labels]
             self.loss = tf.contrib.legacy_seq2seq.sequence_loss(self.decode_outputs, self.labels, loss_weights)
             # train op to minimize the loss
-            self.train_op = tf.train.AdamOptimizer(learning_rate=lr).minimize(self.loss)
+
+            global_step = tf.Variable(0, trainable=False)
+
+            learning_rate = tf.train.exponential_decay(lr,
+                                                       global_step=global_step,
+                                                       decay_steps=100, decay_rate=0.9)
+
+            self.train_op = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(self.loss)
 
         sys.stdout.write('<log> Building Graph ')
         # build comput graph
@@ -104,7 +111,7 @@ class Seq2Seq(object):
         # get batches
         batchX, batchY = train_batch_gen.__next__()
         # build feed
-        feed_dict = self.get_feed(batchX, batchY, keep_prob=0.5)
+        feed_dict = self.get_feed(batchX, batchY, keep_prob=1)
         _, loss_v = sess.run([self.train_op, self.loss], feed_dict)
         return loss_v
 
@@ -139,7 +146,7 @@ class Seq2Seq(object):
         # if no session is given
         if not sess:
             # create a session
-            sess = tf.Session()
+            sess = tf.Session(config=tf.ConfigProto(log_device_placement=False))
             # init all variables
             sess.run(tf.global_variables_initializer())
 
@@ -154,7 +161,7 @@ class Seq2Seq(object):
                 print('val   loss : {0:.6f}'.format(val_loss))
                 if i and i % 10 == 0:  # TODO : make this tunable by the user
                     # save model to disk
-                    saver.save(sess, self.ckpt_path + self.model_name + '.ckpt', global_step=i)
+                    saver.save(sess, self.ckpt_path + self.model_name + '.ckpt')
                     print('\nModel saved to disk at iteration #{}'.format(i))
                     sys.stdout.flush()
             except KeyboardInterrupt:  # this will most definitely happen, so handle it
@@ -167,11 +174,8 @@ class Seq2Seq(object):
         # create a session
         sess = tf.Session()
         # get checkpoint state
-        ckpt = tf.train.get_checkpoint_state(self.ckpt_path)
+        saver.restore(sess, self.ckpt_path + self.model_name + '.ckpt')
         # restore session
-        if ckpt and ckpt.model_checkpoint_path:
-            saver.restore(sess, ckpt.model_checkpoint_path)
-        # return to user
         return sess
 
     # prediction
