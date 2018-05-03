@@ -85,7 +85,7 @@ class Seq2Seq(object):
 
             learning_rate = tf.train.exponential_decay(lr,
                                                        global_step=global_step,
-                                                       decay_steps=100, decay_rate=0.9)
+                                                       decay_steps=10, decay_rate=0.9)
 
             self.train_op = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(self.loss)
 
