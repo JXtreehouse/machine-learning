@@ -3,7 +3,7 @@ import numpy as np
 import sys
 
 setattr(tf.contrib.rnn.GRUCell, '__deepcopy__', lambda self, _: self)
-setattr(tf.contrib.rnn.BasicLSTMCell, '__deepcopy__', lambda self, _: self)
+setattr(tf.contrib.rnn.LSTMCell, '__deepcopy__', lambda self, _: self)
 setattr(tf.contrib.rnn.MultiRNNCell, '__deepcopy__', lambda self, _: self)
 
 
@@ -44,7 +44,7 @@ class Seq2Seq(object):
             self.keep_prob = tf.placeholder(tf.float32)
             # define the basic cell
             basic_cell = tf.contrib.rnn.DropoutWrapper(
-                tf.contrib.rnn.BasicLSTMCell(emb_dim, state_is_tuple=True),
+                tf.contrib.rnn.LSTMCell(emb_dim, state_is_tuple=True),
                 output_keep_prob=self.keep_prob)
             # stack cells together : n layered model
             stacked_lstm = tf.contrib.rnn.MultiRNNCell([basic_cell] * num_layers, state_is_tuple=True)
@@ -81,11 +81,11 @@ class Seq2Seq(object):
             self.loss = tf.contrib.legacy_seq2seq.sequence_loss(self.decode_outputs, self.labels, loss_weights)
             # train op to minimize the loss
 
-            global_step = tf.Variable(0, trainable=False)
+            global_step = tf.Variable(0, trainable=False,name='global_step')
 
             learning_rate = tf.train.exponential_decay(lr,
                                                        global_step=global_step,
-                                                       decay_steps=10, decay_rate=0.9)
+                                                       decay_steps=30, decay_rate=0.99)
 
             self.train_op = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(self.loss)
 
@@ -113,6 +113,7 @@ class Seq2Seq(object):
         # build feed
         feed_dict = self.get_feed(batchX, batchY, keep_prob=1)
         _, loss_v = sess.run([self.train_op, self.loss], feed_dict)
+        print(loss_v)
         return loss_v
 
     def eval_step(self, sess, eval_batch_gen):
@@ -154,20 +155,34 @@ class Seq2Seq(object):
         # run M epochs
         for i in range(self.epochs):
             try:
-                self.train_batch(sess, train_set)
-                val_loss = self.eval_batches(sess, valid_set, 16)  # TODO : and this
-                # print stats
 
-                print('val   loss : {0:.6f}'.format(val_loss))
-                if i and i % 10 == 0:  # TODO : make this tunable by the user
+                self.train_batch(sess, train_set)
+
+                if i and i % 500 == 0:  # TODO : make this tunable by the user
+                    val_loss = self.eval_batches(sess, valid_set, 16)  # TODO : and this
+                    # print stats
+
+                    print('val   loss : {0:.6f}'.format(val_loss))
                     # save model to disk
                     saver.save(sess, self.ckpt_path + self.model_name + '.ckpt')
                     print('\nModel saved to disk at iteration #{}'.format(i))
+
                     sys.stdout.flush()
             except KeyboardInterrupt:  # this will most definitely happen, so handle it
                 print('Interrupted by user at iteration {}'.format(i))
                 self.session = sess
-                return sess
+
+        builder = tf.saved_model.builder.SavedModelBuilder('ckpt/module')
+        inputs = {'input': tf.saved_model.utils.build_tensor_info(self.enc_ip[0])}
+        # y 为最终需要的输出结果tensor
+        outputs = {'output': tf.saved_model.utils.build_tensor_info(self.dec_ip[0])}
+        signature = tf.saved_model.signature_def_utils.build_signature_def(inputs, outputs, 'test_sig_name')
+        builder.add_meta_graph_and_variables(sess, ['bot'], {'signature': signature})
+        builder.save()
+        print('\nSavedModelBuilder saved to disk')
+
+        return sess
+
 
     def restore_last_session(self):
         saver = tf.train.Saver()
