@@ -30,6 +30,7 @@ class ChatBotModel:
             b = tf.get_variable('proj_b', [config.DEC_VOCAB])
             self.output_projection = (w, b)
 
+        #sample classes 数量要比 total classes数量大，这里的classes指vocab词汇
         def sampled_loss(logits, labels):
             labels = tf.reshape(labels, [-1, 1])
             return tf.nn.sampled_softmax_loss(weights=tf.transpose(w),
@@ -49,7 +50,7 @@ class ChatBotModel:
         def _seq2seq_f(encoder_inputs, decoder_inputs, do_decode):
             setattr(tf.contrib.rnn.GRUCell, '__deepcopy__', lambda self, _: self)
             setattr(tf.contrib.rnn.MultiRNNCell, '__deepcopy__', lambda self, _: self)
-            return tf.contrib.legecy_seq2seq.embedding_attention_seq2seq(
+            return tf.contrib.legacy_seq2seq.embedding_attention_seq2seq(
                 encoder_inputs, decoder_inputs, self.cell,
                 num_encoder_symbols=config.ENC_VOCAB,
                 num_decoder_symbols=config.DEC_VOCAB,
@@ -82,13 +83,13 @@ class ChatBotModel:
                 lambda x, y: _seq2seq_f(x, y, False),
                 softmax_loss_function=self.softmax_loss_function)
 
-    def _creat_optimizer(self):
+    def _create_optimizer(self):
         print('--创建优化函数')
         with tf.variable_scope('training') as scope:
             self.global_step = tf.Variable(0, dtype=tf.int32, trainable=False, name='global_step')
 
             if not self.fw_only:
-                self.optimizer = tf.train.GradientDescentOptimizer(config.LR)
+                self.optimizer = tf.train.AdamOptimizer(learning_rate=config.LR)
                 trainables = tf.trainable_variables()
                 self.gradient_norms = []
                 self.train_ops = []
@@ -104,4 +105,4 @@ class ChatBotModel:
         self._create_placeholders()
         self._inference()
         self._create_loss()
-        self._creat_optimizer()
+        self._create_optimizer()

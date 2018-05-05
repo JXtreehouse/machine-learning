@@ -4,14 +4,9 @@ import tensorflow as tf
 import numpy as np
 import random
 import os
-
-
-# 随机获取一个bucket
-def _get_random_bucket(train_buckets_scale):
-    rand = random.random()
-    return min([i for i in range(len(train_buckets_scale))
-                if train_buckets_scale[i] > rand])
-
+import data
+import time
+import sys
 
 # 验证输入长度
 def _assert_lengths(encoder_size, decoder_size, encoder_inputs, decoder_inputs, decoder_masks):
@@ -58,23 +53,30 @@ def run_step(sess, model, encoder_inputs, decoder_inputs, decoder_masks, bucket_
         return None, outputs[0], outputs[1:]
 
 
+# 随机获取一个bucket
+def _get_random_bucket(train_buckets_scale):
+    rand = random.random()
+    return min([i for i in range(len(train_buckets_scale))
+                if train_buckets_scale[i] > rand])
+
+
 def _get_buckets():
-    test_buckets = data.load_data('test_ids.enc', 'test_ids.dec')
-    data_buckets = data.load_data('train_ids.enc', 'train_ids.dec')
-    train_bucket_sizes = [len(data_buckets[b]) for b in range(len(config.BUCKETS))]
+    metadata, idx_q, idx_a = data.load_data()
+    train_data_buckets, test_data_buckets = data.load_bucket_data(idx_q, idx_a)
+    train_bucket_sizes = [len(train_data_buckets[b]) for b in range(len(config.BUCKETS))]
     print("Number of samples in each bucket:\n", train_bucket_sizes)
     train_total_size = sum(train_bucket_sizes)
-    train_buckets_scale = [sum(train_bucket_sizes[:i + 1]) / train_total_size
+    train_buckets_scale = [sum(train_bucket_sizes[i:i + 1]) / train_total_size
                            for i in range(len(train_bucket_sizes))]
     print("Bucket scale:\n", train_buckets_scale)
-    return test_buckets, data_buckets, train_buckets_scale
+    return test_data_buckets, train_data_buckets, train_buckets_scale
 
 
 def _get_skip_step(iteration):
     """ How many steps should the model train before it saves all the weights. """
     if iteration < 100:
-        return 30
-    return 100
+        return 300
+    return 1000
 
 
 def _check_restore_parameters(sess, saver):
@@ -87,9 +89,24 @@ def _check_restore_parameters(sess, saver):
         print("Initializing fresh parameters for the Chatbot")
 
 
+def _eval_test_set(sess, model, test_buckets):
+    """ Evaluate on the test set. """
+    for bucket_id in range(len(config.BUCKETS)):
+        if len(test_buckets[bucket_id]) == 0:
+            print("  Test: empty bucket %d" % (bucket_id))
+            continue
+        start = time.time()
+        encoder_inputs, decoder_inputs, decoder_masks = data.get_batch(test_buckets[bucket_id],
+                                                                        bucket_id,
+                                                                        batch_size=config.BATCH_SIZE)
+        _, step_loss, _ = run_step(sess, model, encoder_inputs, decoder_inputs,
+                                   decoder_masks, bucket_id, True)
+        print('Test bucket {}: loss {}, time {}'.format(bucket_id, step_loss, time.time() - start))
+
+
 def train():
     print('-开始训练')
-    # test_buckets, data_buckets, train_buckets_scale = _get_buckets()
+    test_data_buckets,train_data_buckets, train_buckets_scale = _get_buckets()
 
     model = ChatBotModel(False, config.BATCH_SIZE)
     model.build_graph()
@@ -105,6 +122,25 @@ def train():
         while True:
             skip_step = _get_skip_step(iteration)
             bucket_id = _get_random_bucket(train_buckets_scale)
-            encoder_inputs, decoder_inputs, decoder_masks = data.get_batch(data_buckets[bucket_id],
+            encoder_inputs, decoder_inputs, decoder_masks = data.get_batch(test_data_buckets[bucket_id],
                                                                            bucket_id,
                                                                            batch_size=config.BATCH_SIZE)
+            start = time.time()
+            _, step_loss, _ = run_step(sess, model, encoder_inputs, decoder_inputs, decoder_masks, bucket_id, False)
+            print('Step loss{}, time {}'.format(step_loss,time.time()-start))
+            total_loss += step_loss
+            iteration += 1
+            if iteration % skip_step == 0:
+                print('Iter {}: loss {}, time {}'.format(iteration, total_loss / skip_step, time.time() - start))
+                start = time.time()
+                total_loss = 0
+                saver.save(sess, os.path.join(config.CPT_PATH, 'chatbot'))
+                if iteration % (10 * skip_step) == 0:
+                    # Run evals on development set and print their loss
+                    _eval_test_set(sess, model, test_data_buckets)
+                    start = time.time()
+                sys.stdout.flush()
+
+
+if __name__ == '__main__':
+    train()
