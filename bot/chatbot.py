@@ -1,76 +1,110 @@
-# In[1]:
-
+from bot.model import ChatBotModel
+import bot.config as config
 import tensorflow as tf
 import numpy as np
 import random
-
-tf.device('/gpu:0')
-# preprocessed data
-from datasets.chinese import data
-import data_utils
-
-import seq2seq_wrapper
-
-# load data from pickle and npy files
-metadata, idx_q, idx_a = data.load_data(PATH='datasets/chinese/')
-(trainX, trainY), (testX, testY), (validX, validY) = data_utils.split_dataset(idx_q, idx_a)
-
-# parameters 
-xseq_len = trainX.shape[-1]  # 每句话20个词
-yseq_len = trainY.shape[-1]
-batch_size = 1024
-xvocab_size = len(metadata['idx2w'])  # 一共有多少个单词
-yvocab_size = xvocab_size
-emb_dim = 512
+import os
 
 
-# In[7]:
-
-model = seq2seq_wrapper.Seq2Seq(xseq_len=xseq_len,
-                                yseq_len=yseq_len,
-                                xvocab_size=xvocab_size,
-                                yvocab_size=yvocab_size,
-                                ckpt_path='ckpt/twitter/',
-                                emb_dim=emb_dim,
-                                num_layers=3,
-                                epochs=301,
-                                lr=0.00005
-                                )
-
-# In[8]:
+# 随机获取一个bucket
+def _get_random_bucket(train_buckets_scale):
+    rand = random.random()
+    return min([i for i in range(len(train_buckets_scale))
+                if train_buckets_scale[i] > rand])
 
 
-train = True
+# 验证输入长度
+def _assert_lengths(encoder_size, decoder_size, encoder_inputs, decoder_inputs, decoder_masks):
+    if len(encoder_inputs) != encoder_size:
+        raise ValueError("Encoder length must be equal to the one in bucket,"
+                         " %d != %d." % (len(encoder_inputs), encoder_size))
+    if len(decoder_inputs) != decoder_size:
+        raise ValueError("Decoder length must be equal to the one in bucket,"
+                         " %d != %d." % (len(decoder_inputs), decoder_size))
+    if len(decoder_masks) != decoder_size:
+        raise ValueError("Weights length must be equal to the one in bucket,"
+                         " %d != %d." % (len(decoder_masks), decoder_size))
 
-if train:
-    for i in range(10):
-        c = list(zip(idx_q, idx_a))
 
-        random.Random().shuffle(c)
+# 训练一步
+def run_step(sess, model, encoder_inputs, decoder_inputs, decoder_masks, bucket_id, forward_only):
+    encoder_size, decoder_size = config.BUCKETS[bucket_id]
+    _assert_lengths(encoder_size, decoder_size, encoder_inputs, decoder_inputs, decoder_masks)
 
-        idx_q, idx_a = zip(*c)
+    input_feed = {}
+    for step in range(encoder_size):
+        input_feed[model.encoder_inputs[step].name] = encoder_inputs[step]
+    for step in range(decoder_size):
+        input_feed[model.decoder_inputs[step].name] = decoder_inputs[step]
+        input_feed[model.decoder_masks[step].name] = decoder_masks[step]
 
-        idx_q= np.array(idx_q)
-        idx_a= np.array(idx_a)
+    last_target_name = model.decoder_inputs[decoder_size].name
+    input_feed[last_target_name] = np.zeros([model.batch_size], dtype=np.int32)
 
-        (trainX, trainY), (testX, testY), (validX, validY) = data_utils.split_dataset(idx_q, idx_a)
+    if not forward_only:
+        output_feed = [model.train_ops[bucket_id],
+                       model.gradient_norms[bucket_id],
+                       model.losses[bucket_id]]
 
-        val_batch_gen = data_utils.rand_batch_gen(validX, validY, batch_size)
-        train_batch_gen = data_utils.rand_batch_gen(trainX, trainY, batch_size)
-        sess = model.restore_last_session()
-        sess = model.train(train_batch_gen, val_batch_gen,sess)
-else:
-    sess = model.restore_last_session()
-    test_batch_gen = data_utils.rand_batch_gen(testX, testY, 128)
+    else:
+        output_feed = [model.losses[bucket_id]]
+        for step in range(decoder_size):
+            output_feed.append(model.outputs[bucket_id][step])
 
-    input_ = test_batch_gen.__next__()[0]
-    output = model.predict(sess, input_)
-    print(output.shape)
+    outputs = sess.run(output_feed, input_feed)
+    if not forward_only:
+        return outputs[1], outputs[2], None
+    else:
+        return None, outputs[0], outputs[1:]
 
-    replies = []
-    for ii, oi in zip(input_.T, output):
-        q = data_utils.decode(sequence=ii, lookup=metadata['idx2w'], separator=' ')
-        decoded = data_utils.decode(sequence=oi, lookup=metadata['idx2w'], separator=' ').split(' ')
-        if decoded not in replies:
-            print('q : [{0}]; a : [{1}]'.format(q, ' '.join(decoded)))
-            replies.append(decoded)
+
+def _get_buckets():
+    test_buckets = data.load_data('test_ids.enc', 'test_ids.dec')
+    data_buckets = data.load_data('train_ids.enc', 'train_ids.dec')
+    train_bucket_sizes = [len(data_buckets[b]) for b in range(len(config.BUCKETS))]
+    print("Number of samples in each bucket:\n", train_bucket_sizes)
+    train_total_size = sum(train_bucket_sizes)
+    train_buckets_scale = [sum(train_bucket_sizes[:i + 1]) / train_total_size
+                           for i in range(len(train_bucket_sizes))]
+    print("Bucket scale:\n", train_buckets_scale)
+    return test_buckets, data_buckets, train_buckets_scale
+
+
+def _get_skip_step(iteration):
+    """ How many steps should the model train before it saves all the weights. """
+    if iteration < 100:
+        return 30
+    return 100
+
+
+def _check_restore_parameters(sess, saver):
+    """ Restore the previously trained parameters if there are any. """
+    ckpt = tf.train.get_checkpoint_state(os.path.dirname(config.CPT_PATH + '/checkpoint'))
+    if ckpt and ckpt.model_checkpoint_path:
+        print("Loading parameters for the Chatbot")
+        saver.restore(sess, ckpt.model_checkpoint_path)
+    else:
+        print("Initializing fresh parameters for the Chatbot")
+
+
+def train():
+    print('-开始训练')
+    # test_buckets, data_buckets, train_buckets_scale = _get_buckets()
+
+    model = ChatBotModel(False, config.BATCH_SIZE)
+    model.build_graph()
+
+    saver = tf.train.Saver()
+
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        _check_restore_parameters(sess, saver)
+
+        iteration = model.global_step.eval()
+        total_loss = 0
+        while True:
+            skip_step = _get_skip_step(iteration)
+            bucket_id = _get_random_bucket(train_buckets_scale)
+            encoder_inputs, decoder_inputs, decoder_masks = data.get_batch(data_buckets[bucket_id],
+                                                                           bucket_id,
+                                                                           batch_size=config.BATCH_SIZE)
