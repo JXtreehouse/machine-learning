@@ -30,7 +30,7 @@ class ChatBotModel:
             b = tf.get_variable('proj_b', [config.DEC_VOCAB])
             self.output_projection = (w, b)
 
-        #sample classes 数量要比 total classes数量大，这里的classes指vocab词汇
+        # sample classes 数量要比 total classes数量大，这里的classes指vocab词汇
         def sampled_loss(logits, labels):
             labels = tf.reshape(labels, [-1, 1])
             return tf.nn.sampled_softmax_loss(weights=tf.transpose(w),
@@ -67,11 +67,12 @@ class ChatBotModel:
                 config.BUCKETS,
                 lambda x, y: _seq2seq_f(x, y, True),
                 softmax_loss_function=self.softmax_loss_function)
-
+            # If we use output projection, we need to project outputs for decoding.
             if self.output_projection:
                 for bucket in range(len(config.BUCKETS)):
-                    self.outputs[bucket] = [tf.matmul(output, self.output_projection[0] + self.output_projection[1])
-                                            for output in self.outputs]
+                    self.outputs[bucket] = [tf.matmul(output,
+                                                      self.output_projection[0]) + self.output_projection[1]
+                                            for output in self.outputs[bucket]]
 
         else:
             self.outputs, self.losses = tf.contrib.legacy_seq2seq.model_with_buckets(

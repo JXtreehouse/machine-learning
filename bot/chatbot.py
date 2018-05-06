@@ -8,6 +8,7 @@ import data
 import time
 import sys
 
+
 # 验证输入长度
 def _assert_lengths(encoder_size, decoder_size, encoder_inputs, decoder_inputs, decoder_masks):
     if len(encoder_inputs) != encoder_size:
@@ -69,14 +70,14 @@ def _get_buckets():
     train_buckets_scale = [sum(train_bucket_sizes[i:i + 1]) / train_total_size
                            for i in range(len(train_bucket_sizes))]
     print("Bucket scale:\n", train_buckets_scale)
-    return test_data_buckets, train_data_buckets, train_buckets_scale
+    return test_data_buckets, train_data_buckets, train_buckets_scale, metadata
 
 
 def _get_skip_step(iteration):
     """ How many steps should the model train before it saves all the weights. """
     if iteration < 100:
-        return 300
-    return 1000
+        return 30
+    return 100
 
 
 def _check_restore_parameters(sess, saver):
@@ -97,16 +98,32 @@ def _eval_test_set(sess, model, test_buckets):
             continue
         start = time.time()
         encoder_inputs, decoder_inputs, decoder_masks = data.get_batch(test_buckets[bucket_id],
-                                                                        bucket_id,
-                                                                        batch_size=config.BATCH_SIZE)
+                                                                       bucket_id,
+                                                                       batch_size=config.BATCH_SIZE)
         _, step_loss, _ = run_step(sess, model, encoder_inputs, decoder_inputs,
                                    decoder_masks, bucket_id, True)
         print('Test bucket {}: loss {}, time {}'.format(bucket_id, step_loss, time.time() - start))
 
 
+def _construct_response(output_logits, metadata):
+    """ Construct a response to the user's encoder input.
+    @output_logits: the outputs from sequence to sequence wrapper.
+    output_logits is decoder_size np array, each of dim 1 x DEC_VOCAB
+
+    This is a greedy decoder - outputs are just argmaxes of output_logits.
+    """
+    print(output_logits[0])
+    outputs = [int(np.argmax(logit, axis=1)) for logit in output_logits]
+    # If there is an EOS symbol in outputs, cut them at that point.
+    if config.EOS_ID in outputs:
+        outputs = outputs[:outputs.index(config.EOS_ID)]
+    # Print out sentence corresponding to outputs.
+    return " ".join([tf.compat.as_str(metadata['idx2w'][output]) for output in outputs])
+
+
 def train():
     print('-开始训练')
-    test_data_buckets,train_data_buckets, train_buckets_scale = _get_buckets()
+    test_data_buckets, train_data_buckets, train_buckets_scale, _ = _get_buckets()
 
     model = ChatBotModel(False, config.BATCH_SIZE)
     model.build_graph()
@@ -127,11 +144,12 @@ def train():
                                                                            batch_size=config.BATCH_SIZE)
             start = time.time()
             _, step_loss, _ = run_step(sess, model, encoder_inputs, decoder_inputs, decoder_masks, bucket_id, False)
-            print('Step loss{}, time {}'.format(step_loss,time.time()-start))
+            print('Iter {}:  loss{}, time {}'.format(iteration, step_loss, time.time() - start))
             total_loss += step_loss
             iteration += 1
             if iteration % skip_step == 0:
-                print('Iter {}: loss {}, time {}'.format(iteration, total_loss / skip_step, time.time() - start))
+                print(
+                    'Saved at iter {}: loss {}, time {}'.format(iteration, total_loss / skip_step, time.time() - start))
                 start = time.time()
                 total_loss = 0
                 saver.save(sess, os.path.join(config.CPT_PATH, 'chatbot'))
@@ -142,5 +160,66 @@ def train():
                 sys.stdout.flush()
 
 
+def _get_user_input():
+    """ Get user's input, which will be transformed into encoder input later """
+    print("> ", end="")
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
+
+def _find_right_bucket(length):
+    """ Find the proper bucket for an encoder input based on its length """
+    return min([b for b in range(len(config.BUCKETS))
+                if config.BUCKETS[b][0] >= length])
+
+
+def chat():
+    """ in test mode, we don't to create the backward path
+    """
+    metadata, idx_q, idx_a = data.load_data()
+
+    model = ChatBotModel(True, batch_size=1)
+    model.build_graph()
+
+    saver = tf.train.Saver()
+
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        _check_restore_parameters(sess, saver)
+        # Decode from standard input.
+        max_length = config.BUCKETS[-1][0]
+        print('Welcome to TensorBro. Say something. Enter to exit. Max length is', max_length)
+        while True:
+            try:
+                line = _get_user_input()
+                if len(line) > 0 and line[-1] == '\n':
+                    line = line[:-1]
+                if line == '':
+                    break
+                # Get token-ids for the input sentence.
+                token_ids = data.sentence2id(line, metadata['w2idx'])
+                if (len(token_ids) > max_length):
+                    print('Max length I can handle is:', max_length)
+                    continue
+                # Which bucket does it belong to?
+                bucket_id = _find_right_bucket(len(token_ids))
+                # Get a 1-element batch to feed the sentence to the model.
+                encoder_inputs, decoder_inputs, decoder_masks = data.get_batch([(token_ids, [])],
+                                                                               bucket_id,
+                                                                               batch_size=1)
+                # Get output logits for the sentence.
+                _, _, output_logits = run_step(sess, model, encoder_inputs, decoder_inputs,
+                                               decoder_masks, bucket_id, True)
+                response = _construct_response(output_logits, metadata)
+                print(response)
+            except BaseException:
+                print(BaseException)
+
+
+train_mode = True
+
 if __name__ == '__main__':
-    train()
+    if train_mode:
+        train()
+    else:
+        chat()

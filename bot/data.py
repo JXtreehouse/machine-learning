@@ -43,16 +43,25 @@ def _reshape_batch(inputs, size, batch_size):
     return batch_inputs
 
 
+def build_vocab(vocab, lines):
+    for line in lines:
+        for word in line:
+            if word not in vocab:
+                vocab[word] = 0
+            vocab[word] += 1
+    return vocab
+
+
+def build_id2word(vocab):
+    id2word = {}
+    for (k, v) in vocab.items():
+        id2word[v] = k
+    return id2word
+
+
 def process_raw_data():
     file_path = os.path.join(config.DATA_PATH, config.DATA_FILE)
     lines = read_lines(filename=file_path)
-    freq_dist = nltk.FreqDist(itertools.chain(*lines))
-    vocab = freq_dist.most_common()
-    with open('config.py', 'a') as cf:
-        cf.write('DEC_VOCAB = ' + str(len(vocab)) + '\n')
-        cf.write('ENC_VOCAB = ' + str(len(vocab)) + '\n')
-    id2word = [' '] + [config.UNK_ID] + [x[0] for x in vocab]
-    word2id = dict([(w, i) for i, w in enumerate(id2word)])
 
     qlines = []
     alines = []
@@ -67,6 +76,16 @@ def process_raw_data():
     questions = [[w for w in jb.cut(wordlist)] for wordlist in qlines]
     answers = [[w for w in jb.cut(wordlist)] for wordlist in alines]
 
+    vocab = build_vocab({},questions)
+    vocab = build_vocab(vocab,answers)
+
+    id2word = [' '] + [config.UNK_ID] + [x for x in vocab]
+    word2id = dict([(w, i) for i, w in enumerate(id2word)])
+
+    with open('config.py', 'a') as cf:
+        cf.write('DEC_VOCAB = ' + str(len(id2word)) + '\n')
+        cf.write('ENC_VOCAB = ' + str(len(id2word)) + '\n')
+
     questions_ids = [line_ids(word, word2id, config.SENTENCE_MAX_LEN) for word in questions]
     answers_ids = [line_ids(word, word2id, config.SENTENCE_MAX_LEN) for word in answers]
 
@@ -75,13 +94,12 @@ def process_raw_data():
 
     metadata = {
         'w2idx': word2id,
-        'idx2w': id2word,
-        'freq_dist': freq_dist
+        'idx2w': id2word
     }
     with open(config.DATA_PATH + '/metadata.pkl', 'wb') as f:
         pickle.dump(metadata, f)
 
-    return id2word, word2id, questions_ids, answers_ids, freq_dist
+    return id2word, word2id, questions_ids, answers_ids
 
 
 def load_data():
@@ -105,7 +123,7 @@ def load_bucket_data(encode_ids, decode_ids, max_training_size=None):
     train_data_buckets = [[] for _ in config.BUCKETS]
     test_data_buckets = [[] for _ in config.BUCKETS]
     i = 0
-    for i in range(int(len(encode_ids)*(config.TRAIN_PERCENTAGE/100))):
+    for i in range(int(len(encode_ids) * (config.TRAIN_PERCENTAGE / 100))):
         encode_id = encode_ids[i]
         decode_id = decode_ids[i]
         for bucket_id, (encode_max_size, decode_max_size) in enumerate(config.BUCKETS):
@@ -122,7 +140,12 @@ def load_bucket_data(encode_ids, decode_ids, max_training_size=None):
             if len(encode_id) <= encode_max_size and len(decode_id) <= decode_max_size:
                 test_data_buckets[bucket_id].append([encode_id, decode_id])
                 break
-    return train_data_buckets ,test_data_buckets
+    return train_data_buckets, test_data_buckets
+
+
+def sentence2id(sentence, vocab):
+    sentence = jb.cut(sentence)
+    return [vocab[word] for word in sentence]
 
 
 def get_batch(data_bucket, bucket_id, batch_size=1):
