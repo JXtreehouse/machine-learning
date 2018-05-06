@@ -28,10 +28,7 @@ SENTENCE_MAX_LEN = 30
 TRAIN_PERCENTAGE = 90
 TEST_PERCENTAGE = 10
 
-DATA_SIZE = 10000
+DATA_SIZE = 30000
 
-MIN_FREQUENT = 5
-MAX_FREQUENT = 90
-
-DEC_VOCAB = 2802 #w = tf.get_variable('proj_w', [config.EMB_SIZE, config.DEC_VOCAB])  ， 这个投影矩阵很大
-ENC_VOCAB = 2802
+DEC_VOCAB = 5547#w = tf.get_variable('proj_w', [config.EMB_SIZE, config.DEC_VOCAB])  ， 这个投影矩阵很大
+ENC_VOCAB = 5547

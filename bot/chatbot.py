@@ -120,13 +120,11 @@ def _construct_response(output_logits, metadata):
     if config.EOS_ID in outputs:
         outputs = outputs[:outputs.index(config.EOS_ID)]
     # Print out sentence corresponding to outputs.
-    return " ".join([tf.compat.as_str(id2w(metadata['idx2w'],output)) for output in outputs])
+    return " ".join([tf.compat.as_str(id2w(metadata['idx2w'], output)) for output in outputs])
 
-def id2w(idx2w,id):
-    if id in idx2w:
-        return idx2w[id]
-    else:
-        return 'unk'
+
+def id2w(idx2w, id):
+    return idx2w[id]
 
 
 def train():

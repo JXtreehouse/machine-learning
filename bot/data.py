@@ -52,16 +52,6 @@ def build_vocab(vocab, lines):
     return vocab
 
 
-def build_id2word(vocab):
-    id2word = {}
-    total_size = len(vocab)
-    for (k, v) in vocab.items():
-        freq = vocab[k] / total_size
-        if config.MIN_FREQUENT < freq < config.MAX_FREQUENT:
-            id2word[v] = k
-    return id2word
-
-
 def process_raw_data():
     file_path = os.path.join(config.DATA_PATH, config.DATA_FILE)
     lines = read_lines(filename=file_path)
