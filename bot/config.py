@@ -13,7 +13,7 @@ BUCKETS = [(19, 19), (28, 28)]
 
 NUM_LAYERS = 5
 
-EMB_SIZE = 512  # embedding size 又是 神经元个数
+EMB_SIZE = 256  # embedding size 又是 神经元个数
 BATCH_SIZE = 512
 
 LR = 0.0005
