@@ -11,10 +11,9 @@ EOS_ID = 3
 
 BUCKETS = [(19, 19), (28, 28)]
 
-NUM_LAYERS = 3
-HIDDEN_SIZE = 128  # 神经元个数
+NUM_LAYERS = 4
 
-EMB_SIZE = 256  # embedding size
+EMB_SIZE = 128  # embedding size 又是 神经元个数
 BATCH_SIZE = 128
 
 LR = 0.0005
