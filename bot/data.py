@@ -54,8 +54,11 @@ def build_vocab(vocab, lines):
 
 def build_id2word(vocab):
     id2word = {}
+    total_size = len(vocab)
     for (k, v) in vocab.items():
-        id2word[v] = k
+        freq = vocab[k] / total_size
+        if config.MIN_FREQUENT < freq < config.MAX_FREQUENT:
+            id2word[v] = k
     return id2word
 
 
@@ -76,8 +79,8 @@ def process_raw_data():
     questions = [[w for w in jb.cut(wordlist)] for wordlist in qlines]
     answers = [[w for w in jb.cut(wordlist)] for wordlist in alines]
 
-    vocab = build_vocab({},questions)
-    vocab = build_vocab(vocab,answers)
+    vocab = build_vocab({}, questions)
+    vocab = build_vocab(vocab, answers)
 
     id2word = [' '] + [config.UNK_ID] + [x for x in vocab]
     word2id = dict([(w, i) for i, w in enumerate(id2word)])

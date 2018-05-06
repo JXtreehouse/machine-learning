@@ -90,10 +90,10 @@ class ChatBotModel:
             self.global_step = tf.Variable(0, dtype=tf.int32, trainable=False, name='global_step')
 
             if not self.fw_only:
-                learning_rate = tf.train.exponential_decay(config.LR,
+                self.learning_rate = tf.train.exponential_decay(config.LR,
                                                            global_step=self.global_step,
-                                                           decay_steps=100, decay_rate=0.98)
-                self.optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+                                                           decay_steps=500, decay_rate=0.98)
+                self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate )
                 trainables = tf.trainable_variables()
                 self.gradient_norms = []
                 self.train_ops = []

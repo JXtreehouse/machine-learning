@@ -8,6 +8,8 @@ import data
 import time
 import sys
 
+tf.device('/cpu:0')
+
 
 # 验证输入长度
 def _assert_lengths(encoder_size, decoder_size, encoder_inputs, decoder_inputs, decoder_masks):
@@ -118,7 +120,13 @@ def _construct_response(output_logits, metadata):
     if config.EOS_ID in outputs:
         outputs = outputs[:outputs.index(config.EOS_ID)]
     # Print out sentence corresponding to outputs.
-    return " ".join([tf.compat.as_str(metadata['idx2w'][output]) for output in outputs])
+    return " ".join([tf.compat.as_str(id2w(metadata['idx2w'],output)) for output in outputs])
+
+def id2w(idx2w,id):
+    if id in idx2w:
+        return idx2w[id]
+    else:
+        return 'unk'
 
 
 def train():
@@ -135,6 +143,7 @@ def train():
         _check_restore_parameters(sess, saver)
 
         iteration = model.global_step.eval()
+        learning_rate = model.learning_rate.eval()
         total_loss = 0
         while True:
             skip_step = _get_skip_step(iteration)
@@ -144,7 +153,8 @@ def train():
                                                                            batch_size=config.BATCH_SIZE)
             start = time.time()
             _, step_loss, _ = run_step(sess, model, encoder_inputs, decoder_inputs, decoder_masks, bucket_id, False)
-            print('Iter {}:  loss{}, time {}'.format(iteration, step_loss, time.time() - start))
+            print('Iter {}:  loss{}, learning rate{}, time {}'.format(iteration, step_loss, learning_rate,
+                                                                      time.time() - start))
             total_loss += step_loss
             iteration += 1
             if iteration % skip_step == 0:
