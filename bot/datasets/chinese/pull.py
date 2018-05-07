@@ -84,6 +84,7 @@ if __name__ == '__main__':
             source = hit['_source']
             metadata = process_raw_data(source)
             o.write(json.dumps(metadata))
+            o.write('\r\n')
             o.flush()
             count += 1
         print('fetch: {}, total: {}, time: {}'.format(10000, count, time.time() - start))

@@ -30,5 +30,7 @@ TEST_PERCENTAGE = 10
 
 DATA_SIZE = 30000
 
-DEC_VOCAB = 5547#w = tf.get_variable('proj_w', [config.EMB_SIZE, config.DEC_VOCAB])  ， 这个投影矩阵很大
-ENC_VOCAB = 5547
+
+
+DEC_VOCAB = 67457
+ENC_VOCAB = 67457

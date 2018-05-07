@@ -9,6 +9,7 @@ from collections import defaultdict
 import numpy as np
 import jieba as jb
 import pickle
+import json
 
 import config
 
@@ -16,7 +17,7 @@ regex_cn = "^[\u4E00-\u9FA5]+$"
 
 
 def read_lines(filename):
-    return open(filename, encoding='utf-8').read().split('\n')[:config.DATA_SIZE]
+    return open(filename, encoding='utf-8').readlines()[:100000]
 
 
 def line_ids(line, lookup, maxlen):
@@ -31,6 +32,13 @@ def line_ids(line, lookup, maxlen):
 
 def _pad_input(input_, size):
     return input_ + [config.PAD_ID] * (size - len(input_))
+
+
+def _pad_decoder(input_, size):
+    if len(input_) == size:
+        return input_
+    else:
+        return input_ + [config.EOS_ID] + [config.PAD_ID] * (size - len(input_) - 1)
 
 
 def _reshape_batch(inputs, size, batch_size):
@@ -53,18 +61,23 @@ def build_vocab(vocab, lines):
 
 
 def process_raw_data():
-    file_path = os.path.join(config.DATA_PATH, config.DATA_FILE)
-    lines = read_lines(filename=file_path)
+    lines = read_lines('D:\MyConfiguration\szj46941\PycharmProjects\machine-learning\\bot\datasets\chinese\chatdata')
+    # qas = json.loads(
+    #     open(, mode='r',
+    #     encoding='utf-8').readline()[:2])
 
     qlines = []
     alines = []
 
-    for i in range(0, len(lines), 2):
-        if i + 1 == len(lines):
-            break
-        if re.match(regex_cn, lines[i]) and re.match(regex_cn, lines[i + 1]):
-            qlines.append(lines[i])
-            alines.append(lines[i + 1])
+    for i in range(len(lines)):
+        if lines[i] == '\n': continue
+        session = json.loads(lines[i])
+
+        for j in range(0, len(session), 2):
+            if j + 1 == len(session): break
+            if session[j] != '' and session[j + 1] != '':
+                qlines.append(session[j])
+                alines.append(session[j + 1])
 
     questions = [[w for w in jb.cut(wordlist)] for wordlist in qlines]
     answers = [[w for w in jb.cut(wordlist)] for wordlist in alines]
@@ -151,7 +164,7 @@ def get_batch(data_bucket, bucket_id, batch_size=1):
         encoder_input, decoder_input = random.choice(data_bucket)
         # pad both encoder and decoder, reverse the encoder
         encoder_inputs.append(list(reversed(_pad_input(encoder_input, encoder_size))))
-        decoder_inputs.append(_pad_input(decoder_input, decoder_size))
+        decoder_inputs.append(_pad_decoder(decoder_input, decoder_size))
 
     # now we create batch-major vectors from the data selected above.
     batch_encoder_inputs = _reshape_batch(encoder_inputs, encoder_size, batch_size)
