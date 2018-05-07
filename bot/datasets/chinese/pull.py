@@ -86,4 +86,4 @@ if __name__ == '__main__':
             o.write(json.dumps(metadata))
             o.flush()
             count += 1
-        print('fetch: {}, total: {}, time: {}'.format(10000, count, start - time.time()))
+        print('fetch: {}, total: {}, time: {}'.format(10000, count, time.time() - start))
