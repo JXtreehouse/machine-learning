@@ -72,7 +72,7 @@ if __name__ == '__main__':
     r1 = requests.post(scroll_id_url, json=query1)
     query2['scroll_id'] = json.loads(r1.text)['_scroll_id']
     count = 0
-    total = 0
+    total = 1
     while count < total:
         start = time.time()
         r2 = json.loads(requests.post(scroll_query_url, json=query2).text)
