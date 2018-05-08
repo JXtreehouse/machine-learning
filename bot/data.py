@@ -17,7 +17,7 @@ regex_cn = "^[\u4E00-\u9FA5]+$"
 
 
 def read_lines(filename):
-    return open(filename, encoding='utf-8').readlines()[:100000]
+    return open(filename, encoding='utf-8').readlines()[:5000000]
 
 
 def line_ids(line, lookup, maxlen):
@@ -60,8 +60,8 @@ def build_vocab(vocab, lines):
     return vocab
 
 
-def process_raw_data():
-    lines = read_lines('D:\MyConfiguration\szj46941\PycharmProjects\machine-learning\\bot\datasets\chinese\chatdata')
+def process_raw_data(lines):
+    # lines = read_lines('D:\MyConfiguration\szj46941\PycharmProjects\machine-learning\\bot\datasets\chinese\chatdata')
     # qas = json.loads(
     #     open(, mode='r',
     #     encoding='utf-8').readline()[:2])
@@ -71,7 +71,7 @@ def process_raw_data():
 
     for i in range(len(lines)):
         if lines[i] == '\n': continue
-        session = json.loads(lines[i])
+        session = lines[i]
 
         for j in range(0, len(session), 2):
             if j + 1 == len(session): break

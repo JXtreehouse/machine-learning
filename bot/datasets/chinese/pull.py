@@ -4,6 +4,7 @@ import json
 import re
 import os
 import time
+import data
 
 host = open('D:\MyConfiguration\szj46941\workspace\es.txt', encoding='utf-8').readline()
 
@@ -35,7 +36,7 @@ sub_symbol_reg = "[\s+\.\!\/_,$%^*()+\"\'\:\-\=\;]+|[+——！，。？?、~@#�
 
 
 def filter(line):
-    if len(line) > 100: return ''
+    if len(line) > 100 or len(line)<5: return ''
     if re.match(content_xml_reg, line):
         line = re.sub(sub_xml_reg, '', line)
     line = re.sub(sub_symbol_reg, "", line)  # 去掉中英文符号
@@ -43,7 +44,7 @@ def filter(line):
     return line
 
 
-def process_raw_data(source):
+def filter_data(source):
     contents = source['contents']
     directions = source['directions']
 
@@ -67,24 +68,28 @@ def fetch():
 
 
 if __name__ == '__main__':
+    lines = []
     o = open('D:\MyConfiguration\szj46941\PycharmProjects\machine-learning\\bot\datasets\chinese\chatdata', mode='w+',
              encoding='utf-8')
     r1 = requests.post(scroll_id_url, json=query1)
     query2['scroll_id'] = json.loads(r1.text)['_scroll_id']
     count = 0
-    total = 1
-    while count < total:
+    total = 400000
+    while count <= total:
         start = time.time()
         r2 = json.loads(requests.post(scroll_query_url, json=query2).text)
         query2['scroll_id'] = r2['_scroll_id']
-        total = r2['hits']['total']
+        # total = r2['hits']['total']
 
         hits = r2['hits']['hits']
+        if len(hits) == 0: break
         for hit in hits:
             source = hit['_source']
-            metadata = process_raw_data(source)
-            o.write(json.dumps(metadata))
-            o.write('\r\n')
-            o.flush()
+            metadata = filter_data(source)
+            lines.append(metadata)
+            # o.write(json.dumps(metadata))
+            # o.write('\r\n')
+            # o.flush()
             count += 1
         print('fetch: {}, total: {}, time: {}'.format(10000, count, time.time() - start))
+    data.process_raw_data(lines)
