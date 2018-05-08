@@ -8,7 +8,6 @@ import data
 import time
 import sys
 
-tf.device('/cpu:0')
 
 
 # 验证输入长度
@@ -127,6 +126,7 @@ def id2w(idx2w, id):
 
 
 def train():
+
     print('-开始训练')
     test_data_buckets, train_data_buckets, train_buckets_scale, _ = _get_buckets()
 

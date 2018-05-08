@@ -30,20 +30,6 @@ def split_speed_result(speed_result):
     return speed_split
 
 
-content_xml_reg = '^.*<.*>.*$'
-sub_xml_reg = '<.*>'
-sub_symbol_reg = "[\s+\.\!\/_,$%^*()+\"\'\:\-\=\;]+|[+——！，。？?、~@#￥%……&*（）\：\；\‘\’\“\”\、\-\=]+|[A-Za-z0-9]+|[☆机器人访客☆]"
-
-
-def filter(line):
-    if len(line) > 100 or len(line)<5: return ''
-    if re.match(content_xml_reg, line):
-        line = re.sub(sub_xml_reg, '', line)
-    line = re.sub(sub_symbol_reg, "", line)  # 去掉中英文符号
-    line = ''.join(re.findall(r'[\u4e00-\u9fa5]', line))
-    return line
-
-
 def filter_data(source):
     contents = source['contents']
     directions = source['directions']
@@ -92,4 +78,4 @@ if __name__ == '__main__':
             # o.flush()
             count += 1
         print('fetch: {}, total: {}, time: {}'.format(10000, count, time.time() - start))
-    data.process_raw_data(lines)
+    # data.process_raw_data(lines)

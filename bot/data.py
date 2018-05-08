@@ -10,14 +10,16 @@ import numpy as np
 import jieba as jb
 import pickle
 import json
-
 import config
 
 regex_cn = "^[\u4E00-\u9FA5]+$"
+content_xml_reg = '^.*<.*>.*$'
+sub_xml_reg = '<.*>'
+sub_symbol_reg = "[\s+\.\!\/_,$%^*()+\"\'\:\-\=\;]+|[+——！，。？?、~@#￥%……&*（）\：\；\‘\’\“\”\、\-\=]+|[A-Za-z0-9]+|[☆机器人访客☆]"
 
 
 def read_lines(filename):
-    return open(filename, encoding='utf-8').readlines()[:5000000]
+    return open(filename, encoding='utf-8').readlines()[:100000]
 
 
 def line_ids(line, lookup, maxlen):
@@ -60,24 +62,37 @@ def build_vocab(vocab, lines):
     return vocab
 
 
-def process_raw_data(lines):
-    # lines = read_lines('D:\MyConfiguration\szj46941\PycharmProjects\machine-learning\\bot\datasets\chinese\chatdata')
-    # qas = json.loads(
-    #     open(, mode='r',
-    #     encoding='utf-8').readline()[:2])
+def filter(line):
+    if len(line) > 100 or len(line) < 5: return ''
+    if re.match(content_xml_reg, line):
+        line = re.sub(sub_xml_reg, '', line)
+    line = re.sub(sub_symbol_reg, "", line)  # 去掉中英文符号
+    line = ''.join(re.findall(r'[\u4e00-\u9fa5]', line))
+    return line
+
+
+def process_raw_data():
+    lines = read_lines('D:\workspace\chatdata\chatdata')
 
     qlines = []
     alines = []
 
+    print('loaded')
+
     for i in range(len(lines)):
         if lines[i] == '\n': continue
-        session = lines[i]
-
+        session = json.loads(lines[i])
         for j in range(0, len(session), 2):
             if j + 1 == len(session): break
             if session[j] != '' and session[j + 1] != '':
+                session[j] = filter(session[j])
+                session[j + 1] = filter(session[j + 1])
+                if session[j] == '\n' or session[j] == '' or session[j] == ' ' \
+                        or session[j + 1] == '\n' or session[j + 1] == '' or session[j + 1] == ' ': continue
                 qlines.append(session[j])
                 alines.append(session[j + 1])
+
+    print('filtered')
 
     questions = [[w for w in jb.cut(wordlist)] for wordlist in qlines]
     answers = [[w for w in jb.cut(wordlist)] for wordlist in alines]
@@ -92,11 +107,15 @@ def process_raw_data(lines):
         cf.write('DEC_VOCAB = ' + str(len(id2word)) + '\n')
         cf.write('ENC_VOCAB = ' + str(len(id2word)) + '\n')
 
+    print('wrote config')
+
     questions_ids = [line_ids(word, word2id, config.SENTENCE_MAX_LEN) for word in questions]
     answers_ids = [line_ids(word, word2id, config.SENTENCE_MAX_LEN) for word in answers]
 
     np.save(config.DATA_PATH + '/idx_q.npy', questions_ids)
     np.save(config.DATA_PATH + '/idx_a.npy', answers_ids)
+
+    print('wrote qa')
 
     metadata = {
         'w2idx': word2id,
@@ -104,6 +123,8 @@ def process_raw_data(lines):
     }
     with open(config.DATA_PATH + '/metadata.pkl', 'wb') as f:
         pickle.dump(metadata, f)
+
+    print('wrote metadata')
 
     return id2word, word2id, questions_ids, answers_ids
 
