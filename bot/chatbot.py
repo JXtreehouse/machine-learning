@@ -146,7 +146,7 @@ def train():
         while True:
             skip_step = _get_skip_step(iteration)
             bucket_id = _get_random_bucket(train_buckets_scale)
-            encoder_inputs, decoder_inputs, decoder_masks = data.get_batch(test_data_buckets[bucket_id],
+            encoder_inputs, decoder_inputs, decoder_masks = data.get_batch(train_data_buckets[bucket_id],
                                                                            bucket_id,
                                                                            batch_size=config.BATCH_SIZE)
             start = time.time()

@@ -16,7 +16,7 @@ NUM_LAYERS = 5
 EMB_SIZE = 256  # embedding size 又是 神经元个数
 BATCH_SIZE = 512
 
-LR = 0.0005
+LR = 0.00005
 
 MAX_GRAD_NORM = 5.0
 
