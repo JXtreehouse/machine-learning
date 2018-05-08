@@ -208,7 +208,7 @@ def chat():
             print(response)
 
 
-train_mode = False
+train_mode = True
 
 if __name__ == '__main__':
     if train_mode:
