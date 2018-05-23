@@ -79,17 +79,31 @@ def learnSeries():
 
 
 def learnStatistics():
-    d = {'Name': pd.Series(['Tom', 'James', 'Ricky', 'Vin', 'Steve', 'Minsu', 'Jack',
-                            'Lee', 'David', 'Gasper', 'Betina', 'Andres']),
-         'Age': pd.Series([25, 26, 25, 23, 30, 29, 23, 34, 40, 30, 51, 46]),
-         'Rating': pd.Series([4.23, 3.24, 3.98, 2.56, 3.20, 4.6, 3.8, 3.78, 2.98, 4.80, 4.10, 3.65])}
-    df = pd.DataFrame(d)
-    print(df)
+    # d = {'Name': pd.Series(['Tom', 'James', 'Ricky', 'Vin', 'Steve', 'Minsu', 'Jack',
+    #                         'Lee', 'David', 'Gasper', 'Betina', 'Andres']),
+    #      'Age': pd.Series([25, 26, 25, 23, 30, 29, 23, 34, 40, 30, 51, 46]),
+    #      'Rating': pd.Series([4.23, 3.24, 3.98, 2.56, 3.20, 4.6, 3.8, 3.78, 2.98, 4.80, 4.10, 3.65])}
+    # df = pd.DataFrame(d)
+    # print(df)
     # print(df.sum()) # print(df.sum(0))  axis=0 列
     # print(df.sum(1))
     # print(df.mean())
     # print(df.std()) # 标准差
-    print(df.describe())
+    # print(df.describe())
+    # s = pd.Series([1, 2, 3, 4, 5, 4])
+    # print(s.pct_change())
+    # df = pd.DataFrame(np.random.randn(5, 2))
+    # print(df.pct_change()) # x上一个元素根当前元素的比
+    # s1 = pd.Series(np.random.randn(10))
+    # s2 = pd.Series(np.random.randn(10))
+    # print(s1.cov(s2)) # 协方差
+    s = pd.Series(np.random.np.random.randn(5), index=list('abcde'))
+
+    s['d'] = s['b']  # so there's a tie
+    print(s)
+    print(s.rank())# 排名，最大的分最高
+
+
 
 
 def learnApplication():
@@ -125,6 +139,7 @@ def learnRebuildIndex():
     # df2.reindex_like(df1, method='ffill',limit=1)
     # print(df1.rename(columns={'col1':'colx1'}))
 
+
 def learnIteration():
     # important 迭代时无法修改值
 
@@ -147,15 +162,50 @@ def learnIteration():
     # for row in df.itertuples():
     #     print(row)
 
+
 def learnSort():
-    unsorted_df = pd.DataFrame(np.random.randn(10, 2), index=[1, 4, 6, 2, 3, 5, 9, 8, 0, 7], columns = ['col2', 'col1'])
+    unsorted_df = pd.DataFrame(np.random.randn(10, 2), index=[1, 4, 6, 2, 3, 5, 9, 8, 0, 7], columns=['col2', 'col1'])
     # print(unsorted_df)
     # sorted_df = unsorted_df.sort_index(ascending=False)
     # sorted_df = unsorted_df.sort_index(axis=1)
-    sorted_df = unsorted_df.sort_values(by=['col1','col2'],kind='mergesort')
+    sorted_df = unsorted_df.sort_values(by=['col1', 'col2'], kind='mergesort')
 
     print(sorted_df)
 
 
+def learnStringAndText():
+    s = pd.Series(['Tom', 'William Rick', 'John', 'John', 'Alber@t', np.nan, '1234', 'SteveMinsu'])
+    print(s.str.lower())
+    print(s.str.cat(sep=' <=> '))  # add separator
+    print(s.str.get_dummies())  # 计算每个词在哪个下标出现
+    print(s.str.contains('W'))
+
+
+def learnOption():
+    print("display.max_rows = ", pd.get_option("display.max_rows"))
+    pd.set_option("display.max_rows", 80)
+    print("after set display.max_rows = ", pd.get_option("display.max_rows"))
+    pd.reset_option("display.max_rows")
+    print("reset display.max_rows = ", pd.get_option("display.max_rows"))
+    with pd.option_context("display.max_rows", 10):
+        print(pd.get_option("display.max_rows"))
+    print(pd.get_option("display.max_rows"))
+
+
+def learnIndexAndSelectData():
+    df = pd.DataFrame(np.random.randn(8, 4),
+                      index=['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'], columns=['A', 'B', 'C', 'D'])
+
+    # Select few rows for multiple columns, say list[]
+    print(df.loc[['a', 'b', 'f', 'h'], ['A', 'C']])
+    # Select all rows for multiple columns, say list[]
+    print(df.loc[:, ['A', 'C']])
+    print(df.loc[['a'], ['A', 'C']])
+    print(df.loc[['a', 'b', 'f', 'h'], ['A', 'C']])
+    print(df.loc[['a'], :])
+    print(df.iloc[:4])
+    print(df.iloc[1:5, 2:4]) # 按行号
+    print(df.loc['a'] > 0) # 按行标签
+
 if __name__ == '__main__':
-    learnSort()
+    learnStatistics()
