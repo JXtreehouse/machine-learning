@@ -101,9 +101,7 @@ def learnStatistics():
 
     s['d'] = s['b']  # so there's a tie
     print(s)
-    print(s.rank())# 排名，最大的分最高
-
-
+    print(s.rank())  # 排名，最大的分最高
 
 
 def learnApplication():
@@ -204,8 +202,107 @@ def learnIndexAndSelectData():
     print(df.loc[['a', 'b', 'f', 'h'], ['A', 'C']])
     print(df.loc[['a'], :])
     print(df.iloc[:4])
-    print(df.iloc[1:5, 2:4]) # 按行号
-    print(df.loc['a'] > 0) # 按行标签
+    print(df.iloc[1:5, 2:4])  # 按行号
+    print(df.loc['a'] > 0)  # 按行标签
+
+
+def learnRolling():
+    df = pd.DataFrame(np.random.randn(10, 4),
+                      index=pd.date_range('1/1/2020', periods=10),
+                      columns=['A', 'B', 'C', 'D'])
+    print(df)
+    print(df.rolling(window=3, min_periods=1).mean())  # 第三个元素的值将是n，n-1和n-2元素的平均值
+    print(df.rolling(window=3, min_periods=2).mean())
+    # print(df.expanding(min_periods=1).mean())
+    r = df.rolling(window=3, min_periods=1)
+    print(r['A'].aggregate([np.sum, np.mean]))
+
+
+def learnLackData():
+    df = pd.DataFrame(np.random.randn(5, 3), index=['a', 'c', 'e', 'f',
+                                                    'h'], columns=['one', 'two', 'three'])
+    df = df.reindex(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'])
+    print(df)
+    print(df.fillna(0))
+    print(df.dropna())
+    print(df.replace({1000: 10, 2000: 60}))
+
+
+def learnGroup():
+    ipl_data = {'Team': ['Riders', 'Riders', 'Devils', 'Devils', 'Kings',
+                         'kings', 'Kings', 'Kings', 'Riders', 'Royals', 'Royals', 'Riders'],
+                'Rank': [1, 2, 2, 3, 3, 4, 1, 1, 2, 4, 1, 2],
+                'Year': [2014, 2015, 2014, 2015, 2014, 2015, 2016, 2017, 2016, 2014, 2015, 2017],
+                'Points': [876, 789, 863, 673, 741, 812, 756, 788, 694, 701, 804, 690]}
+    df = pd.DataFrame(ipl_data)
+    grouped = df.groupby('Year')
+    print(grouped['Points'].agg(np.mean))  # 分组后聚合
+    grouped = df.groupby('Team')
+    score = lambda x: (x - x.mean()) / x.std() * 10
+    print(grouped.transform(score))
+    filter = df.groupby('Team').filter(lambda x: len(x) >= 3)  # 过滤
+    print(filter)
+
+
+def learnMergeAndJoin():
+    left = pd.DataFrame({
+        'id': [1, 2, 3, 4, 5],
+        'Name': ['Alex', 'Amy', 'Allen', 'Alice', 'Ayoung'],
+        'subject_id': ['sub1', 'sub2', 'sub4', 'sub6', 'sub5']})
+    right = pd.DataFrame(
+        {'id': [1, 2, 3, 4, 5],
+         'Name': ['Billy', 'Brian', 'Bran', 'Bryce', 'Betty'],
+         'subject_id': ['sub2', 'sub4', 'sub3', 'sub6', 'sub5']})
+    rs = pd.merge(left, right, on=['id', 'subject_id'], how='left') # left join
+    print(rs)
+
+def learnConcat():
+    one = pd.DataFrame({
+        'Name': ['Alex', 'Amy', 'Allen', 'Alice', 'Ayoung'],
+        'subject_id': ['sub1', 'sub2', 'sub4', 'sub6', 'sub5'],
+        'Marks_scored': [98, 90, 87, 69, 78]},
+        index=[1, 2, 3, 4, 5])
+    two = pd.DataFrame({
+        'Name': ['Billy', 'Brian', 'Bran', 'Bryce', 'Betty'],
+        'subject_id': ['sub2', 'sub4', 'sub3', 'sub6', 'sub5'],
+        'Marks_scored': [89, 80, 79, 97, 88]},
+        index=[1, 2, 3, 4, 5])
+    print(pd.concat([one, two], keys=['x', 'y'], ignore_index=True))
+    print(one.append(two))
+
+def learnTimeRange():
+    time = pd.Timestamp('2018-11-01')
+    print(time)
+    time = pd.Timestamp(1588686880, unit='s')
+    print(time)
+    time = pd.date_range("12:00", "23:59", freq="30min").time
+    print(time)
+    time = pd.date_range("12:00", "23:59", freq="H").time # 偏移别名H
+    print(time)
+    time = pd.to_datetime(pd.Series(['Jul 31, 2009', '2019-10-10', None]))
+    print(time)
+
+
+def learnTimeDelta():
+    timediff = pd.Timedelta('2 days 2 hours 15 minutes 30 seconds')
+    print(timediff)
+    s = pd.Series(pd.date_range('2012-1-1', periods=3, freq='D'))
+    td = pd.Series([pd.Timedelta(days=i) for i in range(3)])
+    df = pd.DataFrame(dict(A=s, B=td))
+    df['C'] = df['A'] + df['B']
+    print(df)
+
+
+def learnCategory():
+    # s = pd.Series(["a", "b", "c", "a"], dtype="category")
+    # print(s)
+    # cat = cat=pd.Categorical(['a','b','c','a','b','c','d'], ['c', 'b', 'a'],ordered=True)
+    # print (cat)
+    cat = pd.Categorical(["a", "c", "c", np.nan], categories=["b", "a", "c"])
+    df = pd.DataFrame({"cat": cat, "s": ["a", "c", "c", np.nan]})
+    print(df.describe())
+    print("=============================")
+    print(df["cat"].describe())
 
 if __name__ == '__main__':
-    learnStatistics()
+    learnCategory()
