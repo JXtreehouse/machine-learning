@@ -344,11 +344,11 @@ def plotfig_SVM(xArr, yArr, ws, b, alphas):
 
 if __name__ == "__main__":
     # 获取特征和目标变量
-    dataArr, labelArr = loadDataSet('../../../input/6.SVM/testSet.txt')
+    dataArr, labelArr = loadDataSet('testSet.txt')
     # print(labelArr)
 
     # b是常量值， alphas是拉格朗日乘子
-    b, alphas = smoP(dataArr, labelArr, 0.6, 0.001, 40)
+    b, alphas = smoP(dataArr, labelArr, 1, 0.001, 40000)
     print('/n/n/n')
     print('b=', b)
     print('alphas[alphas>0]=', alphas[alphas > 0])
