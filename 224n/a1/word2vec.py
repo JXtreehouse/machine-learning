@@ -3,9 +3,9 @@
 import numpy as np
 import random
 
-from q1_softmax import softmax
-from q2_gradcheck import gradcheck_naive
-from q2_sigmoid import sigmoid, sigmoid_grad
+from softmax import softmax
+from grad_check import gradcheck_naive
+from sigmoid import sigmoid, sigmoid_grad
 
 
 def normalizeRows(x):
@@ -30,7 +30,7 @@ def tes_normalize_rows():
     print()
 
 
-def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
+def softmaxCostAndGradient(centerWordVector, target, w, dataset):
     """ Softmax cost function for word2vec models
     Implement the cost and gradients for one predicted word vector
     and one target word vector as a building block for word2vec
@@ -56,12 +56,12 @@ def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
     ### YOUR CODE HERE
     # predict 1 x D
     # outputVectors V x D
-    V, D = outputVectors.shape
+    V, D = w.shape
 
-    grad = np.zeros_like(outputVectors)  # V x D
-    gradPred = np.zeros_like(predicted)  # D x 1
+    grad = np.zeros_like(w)  # V x D
+    gradPred = np.zeros_like(centerWordVector)  # D x 1
 
-    outVec = np.dot(predicted, outputVectors.T)  # 1 x V
+    outVec = np.dot(centerWordVector, w.T)  # 1 x V
     y_hat = softmax(outVec)
 
     cost = -np.log(y_hat[target])  # 等价于-y*np.log(y_hat)
@@ -71,8 +71,8 @@ def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
     # grad_out[target] = grad_out[target] - 1 + mask[target] # 对outVec求导数，等价于y_hat-y*(1-mask)
     grad_out[target] = grad_out[target] - 1  # 实在没想明白为什么当成普通的softmax求导才是正确的，而考虑softmax(x - max(x))后报错
 
-    gradPred = np.dot(grad_out.T, outputVectors).ravel()
-    grad = np.dot(grad_out.reshape(V, 1), predicted.reshape(1, D))
+    gradPred = np.dot(grad_out.T, w).ravel()
+    grad = np.dot(grad_out.reshape(V, 1), centerWordVector.reshape(1, D))
 
     ### END YOUR CODE
 
@@ -135,7 +135,7 @@ def negSamplingCostAndGradient(predicted, target, outputVectors, dataset,
     return cost, gradPred, grad
 
 
-def skipgram(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
+def skipgram(centerWord, C, contextWords, tokens, inputVectors, w,
              dataset, word2vecCostAndGradient=softmaxCostAndGradient):
     """ Skip-gram model in word2vec
     Implement the skip-gram model in this function.
@@ -158,18 +158,18 @@ def skipgram(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
 
     cost = 0.0
     gradIn = np.zeros(inputVectors.shape)
-    gradOut = np.zeros(outputVectors.shape)
+    gradOut = np.zeros(w.shape)
 
     ### YOUR CODE HERE
-    currentWord_idx = tokens[currentWord]
-    centerVector = inputVectors[currentWord_idx]
+    centerWordIdx = tokens[centerWord]
+    centerWordVector = inputVectors[centerWordIdx]
 
     for context_word in contextWords:
         contextWord_idx = tokens[context_word]
-        tmp_cost, tmp_gradIn, tmp_gradOut = word2vecCostAndGradient(centerVector, contextWord_idx, outputVectors,
+        tmp_cost, tmp_gradIn, tmp_gradOut = word2vecCostAndGradient(centerWordVector, contextWord_idx, w,
                                                                     dataset)
         cost += tmp_cost
-        gradIn[currentWord_idx] += tmp_gradIn
+        gradIn[centerWordIdx] += tmp_gradIn
         gradOut += tmp_gradOut
     ### END YOUR CODE
     return cost, gradIn, gradOut
@@ -264,20 +264,20 @@ def tes_word2vec():
     np.random.seed(9265)
     dummy_vectors = normalizeRows(np.random.randn(10, 3))
     dummy_tokens = dict([("a", 0), ("b", 1), ("c", 2), ("d", 3), ("e", 4)])
-    print("==== Gradient check for skip-gram ====")
-    gradcheck_naive(lambda vec: word2vec_sgd_wrapper(
-        skipgram, dummy_tokens, vec, dataset, 5, softmaxCostAndGradient),
-                    dummy_vectors)
-    gradcheck_naive(lambda vec: word2vec_sgd_wrapper(
-        skipgram, dummy_tokens, vec, dataset, 5, negSamplingCostAndGradient),
-                    dummy_vectors)
-    print("\n==== Gradient check for CBOW      ====")
-    gradcheck_naive(lambda vec: word2vec_sgd_wrapper(
-        cbow, dummy_tokens, vec, dataset, 5, softmaxCostAndGradient),
-                    dummy_vectors)
-    gradcheck_naive(lambda vec: word2vec_sgd_wrapper(
-        cbow, dummy_tokens, vec, dataset, 5, negSamplingCostAndGradient),
-                    dummy_vectors)
+    # print("==== Gradient check for skip-gram ====")
+    # gradcheck_naive(lambda vec: word2vec_sgd_wrapper(
+    #     skipgram, dummy_tokens, vec, dataset, 5, softmaxCostAndGradient),
+    #                 dummy_vectors)
+    # gradcheck_naive(lambda vec: word2vec_sgd_wrapper(
+    #     skipgram, dummy_tokens, vec, dataset, 5, negSamplingCostAndGradient),
+    #                 dummy_vectors)
+    # print("\n==== Gradient check for CBOW      ====")
+    # gradcheck_naive(lambda vec: word2vec_sgd_wrapper(
+    #     cbow, dummy_tokens, vec, dataset, 5, softmaxCostAndGradient),
+    #                 dummy_vectors)
+    # gradcheck_naive(lambda vec: word2vec_sgd_wrapper(
+    #     cbow, dummy_tokens, vec, dataset, 5, negSamplingCostAndGradient),
+    #                 dummy_vectors)
 
     print("\n=== Results ===")
     print(skipgram("c", 3, ["a", "b", "e", "d", "b", "c"],

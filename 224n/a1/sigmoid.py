@@ -19,7 +19,7 @@ def sigmoid(x):
     return s
 
 
-def sigmoid_grad(s):
+def sigmoid_grad(a):
     """
     Compute the gradient for the sigmoid function here. Note that
     for this implementation, the input s should be the sigmoid
@@ -31,10 +31,10 @@ def sigmoid_grad(s):
     """
 
     ### YOUR CODE HERE
-    ds = s*(1-s)
+    da = a*(1-a)
     ### END YOUR CODE
 
-    return ds
+    return da
 
 
 def tes_sigmoid_basic():

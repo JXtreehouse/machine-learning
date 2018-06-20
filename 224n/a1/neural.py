@@ -47,11 +47,12 @@ def forward_backward_prop(X, labels, params, dimensions):
 
     ### YOUR CODE HERE: backward propagation
     # dz2 = y_hat - label                        # M x Dy
-    dz2 = y_hat - labels
+    mask = (z2 == np.max(z2))
+    dz2 = y_hat - labels * (1 - mask) # softmax 平移了最大的x距离
     gradW2 = np.dot(a1.T, dz2)  # H x Dy
-    gradb2 = np.sum(dz2, axis=0)  # H x 1
+    gradb2 = np.sum(dz2, axis=0)
 
-    dz1 = np.dot(dz2, W2.T) * sigmoid_grad(z1)  # M x H
+    dz1 = np.dot(dz2, W2.T) * sigmoid_grad(a1)  # M x H
     gradW1 = np.dot(X.T, dz1)  # DX x H
     gradb1 = np.sum(dz1, axis=0)  # H x 1
 
