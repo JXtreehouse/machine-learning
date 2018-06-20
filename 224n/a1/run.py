@@ -8,7 +8,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import time
 
-from word2vec import *
+from a1_word2vec import *
 from sgd import *
 
 
