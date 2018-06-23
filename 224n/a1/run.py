@@ -45,9 +45,7 @@ if __name__ == '__main__':
     print("training took %d seconds" % (time.time() - startTime))
 
     # concatenate the input and output word vectors
-    wordVectors = np.concatenate(
-        (wordVectors[:nWords, :], wordVectors[nWords:, :]),
-        axis=0)
+    wordVectors = wordVectors[:nWords, :]
     # wordVectors = wordVectors[:nWords,:] + wordVectors[nWords:,:]
 
     visualizeWords = [
@@ -71,4 +69,19 @@ if __name__ == '__main__':
     plt.ylim((np.min(coord[:, 1]), np.max(coord[:, 1])))
 
     plt.savefig('q3_word_vectors.png')
+
+    w2vdict = []
+    for token in tokens:
+        vector = wordVectors[tokens[token]]
+        line = ''
+        for i in range(len(vector)):
+            if i == 0:
+                line += token + ' ' + str(vector[i])
+            else:
+                line += ' ' + str(vector[i])
+        w2vdict.append(line)
+
+    with open('word2vec.txt', "w") as f:
+        for i in range(len(w2vdict)):
+            f.write(w2vdict[i] + '\r\n')
 
