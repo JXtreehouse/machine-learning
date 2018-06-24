@@ -1,11 +1,12 @@
 import numpy as np
 
-DEFAULT_FILE_PATH = "utils/datasets/word2vec.txt"
+# DEFAULT_FILE_PATH = "utils/datasets/word2vec.txt"
+DEFAULT_FILE_PATH = "D:\data\glove.6B.50d.txt"
 
-def loadWordVectors(tokens, filepath=DEFAULT_FILE_PATH, dimensions=10):
+def loadWordVectors(tokens, filepath=DEFAULT_FILE_PATH, dimensions=50):
     """Read pretrained GloVe vectors"""
     wordVectors = np.zeros((len(tokens), dimensions))
-    with open(filepath) as ifs:
+    with open(filepath, encoding='utf-8') as ifs:
         for line in ifs:
             line = line.strip()
             if not line:
