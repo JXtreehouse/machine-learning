@@ -53,13 +53,13 @@ def write_extension(q_list, s_list):
 
 
 def write_test(q_list, s_list):
-    workbook = xlrd.open_workbook(workbook_extension_question_path)
+    workbook = xlrd.open_workbook(workbook_test_question_path)
     workbooknew = copy(workbook)
     ws = workbooknew.get_sheet(0)
     row_index = 1
     for i in range(len(q_list)):
         question = q_list[i]
-        extensions = s_list[i][int(len(s_list[i]) * 1 / 10):]
+        extensions = s_list[i][int(len(s_list[i]) * 9 / 10):]
         if len(extensions) == 0:
             extensions = s_list[i][0]
         for q in extensions:
@@ -93,7 +93,7 @@ if __name__ == '__main__':
                 else:
                     if rows[16] != '':
                         similar_questions.append(str.strip(rows[16]))
-            if len(similar_questions) > 0:
+            if len(similar_questions) >= 30:
                 q_list.append(question)
                 a_list.append(answer)
                 s_list.append(similar_questions)
