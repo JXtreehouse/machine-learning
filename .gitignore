@@ -5,4 +5,5 @@ application.yml
 test/
 var/
 
-
+*.ckpt.*
+checkpoint

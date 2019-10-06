@@ -14,7 +14,7 @@ from detection.config import anchors, class_names
 
 
 input_size = (416, 416)
-image_file = "0001.jpg"
+image_file = "dataset/road.jpg"
 image = cv2.imread(image_file)
 image_shape = image.shape[:2]
 image_cp = preprocess_image(image, input_size)
@@ -41,7 +41,7 @@ with tf.Session() as sess:
 bboxes, scores, class_inds = postprocess(bboxes, obj_probs, class_probs,
                                          image_shape=image_shape)
 img_detection = draw_detection(image, bboxes, scores, class_inds, class_names)
-cv2.imwrite("detection.jpg", img_detection)
-cv2.imshow("detection results", img_detection)
+cv2.imwrite("dataset/detection.jpg", img_detection)
+cv2.imshow("dataset/detection results", img_detection)
 
 cv2.waitKey(0)
