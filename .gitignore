@@ -6,4 +6,5 @@ test/
 var/
 
 *.ckpt.*
+*ckpt*
 checkpoint
