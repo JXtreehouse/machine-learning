@@ -1,5 +1,9 @@
+import random
+
+import numpy as np
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
+import cv2
 
 # 数据集路径
 data_dir = 'D://dataset/mnist'
@@ -71,19 +75,43 @@ correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))
 # 用平均值来统计测试准确率
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-# 训练模型
-saver=tf.train.Saver()
-with tf.Session() as sess:
-    tf.global_variables_initializer().run()
+def train():
+    # 训练模型
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        tf.global_variables_initializer().run()
 
-    for step in range(step_cnt):
-        batch = mnist.train.next_batch(batch_size)
-        if step % 100 == 0:
-            # 每迭代100步进行一次评估，输出结果，保存模型，便于及时了解模型训练进展
-            train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
-            print("step %d, training accuracy %g" % (step, train_accuracy))
-            saver.save(sess,'./ckpt/mnist.ckpt',global_step=step)
-        train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.8})
+        for step in range(step_cnt):
+            batch = mnist.train.next_batch(batch_size)
+            if step % 100 == 0:
+                # 每迭代100步进行一次评估，输出结果，保存模型，便于及时了解模型训练进展
+                train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
+                print("step %d, training accuracy %g" % (step, train_accuracy))
+                saver.save(sess, './ckpt/mnist.ckpt', global_step=step)
+            train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.8})
 
-    # 使用测试数据测试准确率
-    print("test accuracy %g" % accuracy.eval(feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
+        # 使用测试数据测试准确率
+        print("test accuracy %g" % accuracy.eval(feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
+
+def inference():
+    # 加载 MNIST 模型
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        saver.restore(sess, tf.train.latest_checkpoint("./ckpt"))
+
+        # 随机提取 MNIST 测试集的一个样本数据和标签
+        test_len = len(mnist.test.images)
+        test_idx = random.randint(0, test_len - 1)
+        x_image = mnist.test.images[test_idx]
+        y = np.argmax(mnist.test.labels[test_idx])
+
+        # 跑模型进行识别
+        p = tf.argmax(y_conv, 1)
+        pred = sess.run(p, feed_dict={x: [x_image], keep_prob: 1.0})
+        im = x_image.reshape(28, 28)
+        cv2.imshow("pic", im)
+        print('正确：', y, '，预测：', pred[0])
+        cv2.waitKey(0)
+
+if __name__ == '__main__':
+    inference()
