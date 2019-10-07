@@ -1,15 +1,41 @@
 import numpy as np
+from functools import reduce
+from functools import wraps
+
+def iou_test():
+    b1 = np.arange(1, 10)
+
+    b1_xy = b1[..., :2] #get elements from 0~1
+    b1_wh = b1[..., 2:4] #get elements from 3
+    b1_wh_half = b1_wh / 2.
+    b1_mins = b1_xy - b1_wh_half
+    b1_maxes = b1_xy + b1_wh_half
+
+    b2 = np.arange(2, 11)
+
+    b2_xy = b2[..., :2]
+    b2_wh = b2[..., 2:4]
+    b2_wh_half = b2_wh / 2.
+    b2_mins = b2_xy - b2_wh_half
+    b2_maxes = b2_xy + b2_wh_half
+
+    intersect_mins = np.maximum(b1_mins, b2_mins)
+    intersect_maxes = np.minimum(b1_maxes, b2_maxes)
+
+    intersect_wh = np.maximum(intersect_maxes - intersect_mins, 0.)
+    intersect_area = intersect_wh[..., 0] * intersect_wh[..., 1]
+
+    b1_area = b1_wh[..., 0] * b1_wh[..., 1]
+    b2_area = b2_wh[..., 0] * b2_wh[..., 1]
+    iou = intersect_area / (b1_area + b2_area - intersect_area)
+    print(iou)
+
+def fragment_test():
+    x = np.reshape(np.arange(1, 10), (3, 3))
+    print(x)
+    print(x[0, ...]) # 打印第一个坐标轴的第一个tensor
+    print(x[ ..., 0]) # 打印第二个坐标轴的第一个tensor
+    print(x[ ..., 1]) # 打印第二个坐标轴的第2个tensor
 
 if __name__ == '__main__':
-    lines = open('C:\\Users\\admin\\Desktop\\beer标记过数据.csv').readlines()[:-1]
-    print(lines[1])
-    tags = ['ml' in line or 'ML' in line or '桶' in line or '听' in line or '箱' or '瓶' in line in line for line in lines]
-    print(len(tags))
-    print(tags.count(True))
-    indexes = [i for i in range(len(tags)) if tags[i] == False]
-    noises =[lines[x] +'--------------' for x in indexes]
-    print(noises[:100])
-
-
-
-
+    fragment_test()
